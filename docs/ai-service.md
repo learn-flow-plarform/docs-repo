@@ -1,7 +1,8 @@
-# Getting Started
+# AI Service — study-partner-ai
 
-Setup, configuration, and day-to-day commands for the Study Partner AI Python
-service.
+Setup, configuration, and day-to-day commands for the Python AI service
+(multi-agent, RabbitMQ job bus, shared LiteLLM client). Consumed through the
+API's AI Orchestrator (`:3004`); see [Backend API](backend-api.md).
 
 ## Prerequisites
 

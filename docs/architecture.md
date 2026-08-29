@@ -1,66 +1,87 @@
-# System Overview
+# Architecture — Platform
 
-Study Partner AI is a multi-agent study-assistance platform. Agents listen for
-signals/sessions and answer through a shared LLM client; long-running work is
-moved onto an async job bus (RabbitMQ) with idempotent, retryable workers.
+The platform is three collaborating repositories:
 
-## Agents
+```
+study-partner-web        React frontend (users interact here)
+        │  HTTPS /api/*, /ws
+        ▼
+study-partner-api        Express microservices behind an API Gateway
+        │  AI-bound requests → ai-orchestrator-service (:3004)
+        ▼
+study-partner-ai         Python agents + job bus + shared LLM client
+```
 
-| Agent | Role | Key modules |
-|-------|------|-------------|
-| **Planner** | Decomposes learning goals into atomic tasks, applies pacing rules, RAG over course material | `agents/planner/` |
-| **Coach** | Real-time coaching decisions + nudges (rules first, LLM fallback) | `agents/coach/` |
-| **Scheduler** | Time-tabling with constraints, pacing factor | `agents/scheduler/` |
-| **Search** | Web search + extraction + LLM synthesis of answers | `agents/search/` |
-| **Course Ingestion** | PDF → structured course JSON (parsing, OCR, normalization), enrichment, task generation | `agents/course_ingestion/` |
-| **Evaluator** | Socratic question generation and answer grading (template fallback) | `agents/evaluator/` |
-| **Reflection** | Weekly reflection journaling from focus/fatigue/XP trends | `agents/reflection/` |
+## Request flow (end-to-end)
 
-`agents/orchestrator.py` wires course ingestion → planner for the study-plan
-flow used by root-level integration scripts.
+1. The **web app** calls `/api/*` (same-origin in dev via the Vite proxy,
+   `VITE_API_URL` in production). Websocket traffic uses `/ws` for real-time
+   features.
+2. The **API Gateway** (`:3000`) authenticates (JWT in httpOnly cookies),
+   rate-limits, and routes to the backing microservices.
+3. The **AI Orchestrator** (`:3004`) converts study-planning, coaching,
+   ingestion, and signal requests into calls to the **Python AI** service.
+4. The **Python AI** service runs agents synchronously (FastAPI) or pushes
+   long-running work (planning, coaching) onto the **RabbitMQ job bus**
+   consumed by workers, with per-agent LLM calls through one **LiteLLM**
+   client.
 
-## Services
+## Backend (study-partner-api)
 
-| Service | Purpose |
-|---------|---------|
-| `services/api` | FastAPI entry point (`/api/v1/session`, ingestion routes, etc.) |
-| `services/ai_orchestrator` | Coordinates agent interactions (legacy direct HTTP routing) |
-| `services/schedule_orchestrator` | Schedule management over the planner/scheduler output |
-| `services/signal_processing_service` | EMA smoothing + trend computation for focus/fatigue signals |
-| `services/vector_store` | SentenceTransformers embedder + FAISS/MongoDB adapter for RAG |
-| `services/database.py` | Shared Mongo wiring |
+Express microservices, one process per concern, orchestrated by Docker
+Compose on the `study-partner-network`.
 
-## Job bus (RabbitMQ)
+| Service | Port | Role |
+|---------|------|------|
+| API Gateway | 3000 | Request routing, rate limiting, monitoring |
+| Auth | 3001 | JWT auth (register/login/me, refresh, OTP, email verify) |
+| User Profile | 3002 | Profiles, availability, gamification, goals |
+| Study | 3003 | Tasks, topics, sessions, courses, plans |
+| AI Orchestrator | 3004 | Proxy to Python AI; coach history; signal snapshots |
+| Signal Processing | 3005 | Focus session tracking |
+| Analytics | 3006 | Event tracking & insights |
+| Notification | 3007 | In-app notifications |
 
-`messaging/` defines the envelope, topology, and failure handling;
-`workers/` implements consumers:
+Cross-cutting code lives in the `@study-partner/shared` package (rate limit,
+CORS, Winston logging, auth/tier gates, DB connection). Redis backs rate
+limiting/caching; RabbitMQ is reserved for the AI job bus.
 
-- `workers/coach_worker.py` — consumes coaching jobs; rejects → `TerminalError`
-  → dead-letter on validation failures (COACH-06 semantics)
-- `workers/planner_worker.py` — planning jobs
-- `workers/idempotency.py` — idempotent job completion
+Full details: [Backend API](backend-api.md).
 
-Coach/planner LLM failures on the bus surface as job retry events; per-agent
-rule-based fallbacks keep the product working without a live LLM.
+## Frontend (study-partner-web)
 
-## LLM access
+React single-page app (Vite). Key areas: onboarding/auth, dashboard, study
+planner + sessions, subjects, characters & store (Stripe checkout), social
+(friends, leaderboard, teams), AI search, voice/WebRTC chat, and admin panels.
 
-All agents call the LLM through `utils/llm_client.ask(agent, system, user, ...)`.
-Model selection, temperature, and fallback chains live in
-`litellm/config.yaml` (see [LLM Configuration](llm-config.md)).
+It talks to the API through one axios instance (relative `/api/*`, cookies
+`withCredentials`) and a shared `authStore` that guards the refresh-token
+flow against races.
 
-Every user-derived string is wrapped in `UNTRUSTED` blocks by
-`security/prompt_guard` (`build_system_block`, `wrap_untrusted`) so prompt
-injection in user data cannot alter the system role.
+Full details: [Frontend Web](frontend-web.md).
 
-## Cross-cutting
+## AI layer (study-partner-ai)
 
-- **Logging** — structured JSON via `utils/logger.py`, `trace_id` propagated
-  API → orchestrator → agent → LLM call.
-- **Persistence** — MongoDB collections for coach history, pacing memory,
-  reflections, embedding chunks; FAISS disk indices under `agents/planner/rag/`.
-- **Tracking** — progress against the sprint backlog lives in
-  [Implementation Tracker](implementation-tracker.md).
+Python multi-agent service. The **planner**, **coach**, **scheduler**,
+**search**, **course ingestion**, **evaluator**, and **reflection** agents
+answer through a shared LLM client (`utils/llm_client.ask`) with per-agent
+models and fallback chains declared in `litellm/config.yaml`.
 
-For a detailed runtime data-flow report (vector store pipeline, coach memory,
-retrieval paths), see [Agents Data Flow & Structure Report](reference/agents-dataflow-report.md).
+Long-running AI work travels over a RabbitMQ job bus (`messaging/` topology,
+`workers/` consumers) with idempotency and retry/fallback semantics. User
+content is always wrapped in `UNTRUSTED` blocks by `security/prompt_guard`.
+
+Full details: [AI Service](ai-service.md), [LLM Configuration](llm-config.md),
+and the [Agents Data Flow Report](reference/agents-dataflow-report.md).
+
+## Cross-cutting concerns
+
+- **Authentication** — JWT; access + refresh tokens in httpOnly cookies;
+  single-flight refresh on the web side.
+- **Observability** — structured JSON logging everywhere (Winston in Node,
+  `utils/logger.py` in Python), request/trace IDs propagated end-to-end.
+- **Data** — MongoDB (7) with Mongoose for API state; Mongo + FAISS disk
+  indices for AI RAG/embeddings; Redis for rate limits/cache.
+- **Deployment** — Docker Compose (12 containers: 8 services + redis,
+  rabbitmq, ai-service, frontend); the AI repo is also valid as a LiteLLM
+  proxy setup.
