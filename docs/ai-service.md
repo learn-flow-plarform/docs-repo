@@ -58,6 +58,24 @@ poetry run python -m workers.coach_worker
 poetry run python -m workers.planner_worker
 ```
 
+## Worker reliability contract (COACH-08 / COACH-09)
+
+Both the coach and planner workers share one retry → fallback → persist flow
+(AI-COM-06/07 foundation):
+
+1. **Retry.** Real LLM failures (`LLMRequestError` — timeout/quota) are raised as
+   `RetryableError` and owned by the shared retry/DLQ policy (NACK + TTL'd delay
+   queues, `MAX_RETRIES`). Missing keys / mock mode degrade in-process instead.
+2. **Fallback.** On the final attempt a job is not dead-lettered — the coach falls
+   back to the deterministic rule engine (`apply_rules`, guaranteed safe nudge),
+   the planner to `SimpleGoalDecomposer`. The result is `COMPLETED` with
+   `fallbackUsed: true` and still passes output validation.
+3. **Persist.** Completed coach decisions are persisted to the `coach_actions`
+   collection on job completion, idempotently by `correlationId` (unique
+   `trace_id` index + `$setOnInsert` upsert). Failed paths never persist, so no
+   partial history rows. The repository degrades to a no-op when MongoDB is
+   unavailable.
+
 ## Testing
 
 ```bash

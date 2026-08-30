@@ -919,7 +919,7 @@ As an AI engineer, I want the remaining agents moved onto the shared LiteLLM cli
 
 ---
 
-#### COACH-08 — Retry / Fallback
+#### COACH-08 — Retry / Fallback ✅ done
 
 **User Story:**
 As a Platform Engineer, I want coach failures retried with the shared policy and a rule-engine fallback so that coaching still works during LLM outages.
@@ -930,18 +930,19 @@ As a Platform Engineer, I want coach failures retried with the shared policy and
 **Estimated Hours:** 3
 **Story Points:** 3
 **Day:** 4
+**Status:** DONE (2026-08-30, branches `coach-08` — incl. PLAN-06 planner parity)
 
 **Dependencies:** AI-COM-06
 
 **Acceptance Criteria:**
-- Timeout/quota failures flow through retry/DLQ policy
-- After retries, fall back to the existing rule engine
-- Fallback nudge passes COACH-05/06 validation
-- Job marked `COMPLETED` with `fallbackUsed: true`
+- [x] Timeout/quota failures flow through retry/DLQ policy
+- [x] After retries, fall back to the existing rule engine
+- [x] Fallback nudge passes COACH-05/06 validation
+- [x] Job marked `COMPLETED` with `fallbackUsed: true`
 
 ---
 
-#### COACH-09 — Result Persistence
+#### COACH-09 — Result Persistence ✅ done
 
 **User Story:**
 As a Backend engineer, I want coach results persisted to the coach-history store so that history and declining-trend detection keep working.
@@ -952,13 +953,14 @@ As a Backend engineer, I want coach results persisted to the coach-history store
 **Estimated Hours:** 3
 **Story Points:** 3
 **Day:** 4
+**Status:** DONE (2026-08-30, branch `coach-09`)
 
 **Dependencies:** AI-COM-07
 
 **Acceptance Criteria:**
-- Nudge persisted to coach history collection on job completion
-- Idempotent by `correlationId` (no duplicate history entries)
-- Failure path leaves no partial history records
+- [x] Nudge persisted to coach history collection on job completion
+- [x] Idempotent by `correlationId` (no duplicate history entries)
+- [x] Failure path leaves no partial history records
 
 ---
 

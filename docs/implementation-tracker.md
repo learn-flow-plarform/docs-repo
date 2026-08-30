@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-29 (S-MIG-01 completed — all agents on LiteLLM client; F03 8/16)
+**Last updated:** 2026-08-30 (COACH-08 completed — retry/fallback; COACH-09 completed — idempotent history persistence; F03 10/16)
 
 ---
 
@@ -16,7 +16,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 16 | 8 | 0 | 🔄 |
+| F03 AI Coach | 16 | 10 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
@@ -172,8 +172,35 @@ _Update the status column as stories are completed. Do not reorder IDs._
   - Per-agent no-key degradation preserved (rule engine / `""` / template fallback)
   - `tests/test_prompt_guard.py` updated for `_build_prompt`; 158/158 suite green
   - Branched + pushed `origin/s-mig-01`
-- [ ] **COACH-08** Rule-engine fallback after retries — *H* · deps: AI-COM-06
-- [ ] **COACH-09** Coach history persistence (idempotent) — *H* · deps: AI-COM-07
+- [x] **COACH-08** Rule-engine fallback after retries — *H* · deps: AI-COM-06
+  - `llm_decider.call_gemini`: `MissingMockResponderError` → mock degrade (no key / mock mode);
+    real `LLMRequestError` (timeout/quota) → `raise RetryableError(...)` so the shared AI-COM-06
+    retry/DLQ policy owns recovery
+  - `CoachWorker.handle`: `CoachOutputRejectedError` → `TerminalError` (COACH-06, terminal);
+    `RetryableError` at `current_attempt >= MAX_RETRIES` → `_fallback_result`, otherwise re-raise
+  - `_fallback_result`: `apply_rules` with a guaranteed `safe_fallback_nudge` when no hard rule
+    fires; fallback decision still sanitized + validated via `check_coach_output`; result carries
+    `fallbackUsed: true`
+  - Restored missing `import os` in `llm_decider` (pre-existing `NameError` in `_has_real_api_key`
+    surfaced once the mock-degrade path was reachable)
+  - **PLAN-06 parity:** planner retry/fallback made live — `llm_decomposer_real._completion` now
+    raises `RetryableError` on `LLMRequestError` so `PlannerWorker`'s `_fallback_result`
+    (SimpleGoalDecomposer) actually fires instead of dead-lettering
+  - New `tests/test_coach_retry.py` + coach/planner worker additions; 185/185 green
+  - Branched + pushed `origin/coach-08`
+- [x] **COACH-09** Coach history persistence (idempotent) — *H* · deps: AI-COM-07
+  - `CoachHistoryRepository.save_action` → `update_one({"trace_id": ...}, {"$setOnInsert": doc},
+    upsert=True)`: a matched trace_id is a no-op, so retried/redelivered jobs cannot duplicate
+    history rows (idempotent by `correlationId`, stored as `correlation_id` field)
+  - Unique index `uniq_coach_actions_trace_id` on `trace_id` created best-effort in `_ensure_index`
+    (database-level race guard)
+  - `CoachWorker.handle` persists every completed decision (normal + rule-engine fallback) before
+    the result publishes — off the event loop, repository no-ops when Mongo is unavailable;
+    TerminalError / sub-max RetryableError paths never reach persistence → no partial records
+  - `_fallback_result` → `_fallback_action` (returns CoachAction); `_build_coach_input` extracted
+    and shared by fallback + persistence
+  - Repo + worker tests added/updated; 190/190 suite green
+  - Branched + pushed `origin/coach-09`
 - [ ] **COACH-10** Nudge API → 202 jobId — *H* · deps: COACH-09
 - [ ] **COACH-11** Coach E2E — *H* · deps: COACH-10
 - [ ] **COACH-12** Coach injection tests — *H* · deps: COACH-06
