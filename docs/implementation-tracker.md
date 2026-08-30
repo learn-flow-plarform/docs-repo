@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-30 (full status sweep of every pending story against the code — COACH-08/09, OPS-03 and TEST-04 confirmed done; all other pending stories verified not-yet-complete by read-only audit)
+**Last updated:** 2026-08-30 (COACH-10 node API shipped on `origin/coach-10`)
 
 ---
 
@@ -16,7 +16,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 17 | 10 | 0 | 🔄 |
+| F03 AI Coach | 17 | 11 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
@@ -201,7 +201,16 @@ _Update the status column as stories are completed. Do not reorder IDs._
     and shared by fallback + persistence
   - Repo + worker tests added/updated; 190/190 suite green
   - Branched + pushed `origin/coach-09`
-- [ ] **COACH-10** Nudge API → 202 jobId — *H* · deps: COACH-09
+- [x] **COACH-10** Nudge API → 202 jobId — *H* · deps: COACH-09
+  - `POST /api/v1/coach/nudge` (study service, `services/study/src/routes/coach.js`): validates
+    nudge fields, resolves the authenticated user's active `StudySession` (or an owned, still-active
+    `session_id`), publishes a `study.coach.nudge` job to the orchestrator bus, returns
+    `202 { status, jobId, correlationId }`
+  - `GET /api/v1/coach/jobs/:jobId` reads `ai_jobs` owner-scoped (`{ jobId, userId }`) → status + result/nudge
+  - Gateway proxies `/api/v1/coach` → study-service and documents both endpoints in the OpenAPI spec
+  - 8 new jest tests (202/400/404/503, session ownership, `current_time` default, cross-user scoping);
+    `services/study` coach suite green, no regressions (5 pre-existing suite failures on base unchanged)
+  - Branched + pushed `origin/coach-10`
 - [ ] **COACH-11** Coach E2E — *H* · deps: COACH-10
 - [ ] **COACH-12** Coach injection tests — *H* · deps: COACH-06
 

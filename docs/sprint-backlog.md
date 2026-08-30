@@ -975,13 +975,16 @@ As a Backend engineer, I want the coaching API to create jobs and return their s
 **Estimated Hours:** 3
 **Story Points:** 3
 **Day:** 4–5
+✅ done
+
+**Status:** DONE (2026-08-30, branch `coach-10`)
 
 **Dependencies:** COACH-09
 
 **Acceptance Criteria:**
-- `POST /api/v1/coach/nudge` returns `202 { jobId }`
-- `GET /api/v1/coach/jobs/{jobId}` returns status + nudge
-- Session-scoped: nudges tied to the active `sessionId` of the authenticated user
+- [x] `POST /api/v1/coach/nudge` returns `202 { jobId }`
+- [x] `GET /api/v1/coach/jobs/{jobId}` returns status + nudge
+- [x] Session-scoped: nudges tied to the active `sessionId` of the authenticated user
 
 ---
 
