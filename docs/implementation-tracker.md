@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-30 (COACH-08 completed — retry/fallback; COACH-09 completed — idempotent history persistence; F03 10/16)
+**Last updated:** 2026-08-30 (full status sweep of every pending story against the code — COACH-08/09, OPS-03 and TEST-04 confirmed done; all other pending stories verified not-yet-complete by read-only audit)
 
 ---
 
@@ -16,17 +16,17 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 16 | 10 | 0 | 🔄 |
+| F03 AI Coach | 17 | 10 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
 | F07 Study Reliability | 11 | 2 | 0 | 🔄 |
 | F08 Gamification Events | 10 | 0 | 0 | ⬜ |
 | F09 Analytics & Performance | 12 | 0 | 0 | ⬜ |
-| F10 Testing & Quality | 14 | 0 | 2 | 🔄 |
+| F10 Testing & Quality | 14 | 1 | 2 | 🔄 |
 | F11 Infrastructure & Deploy | 13 | 0 | 0 | ⬜ |
 | F12 UX & Frontend | 12 | 0 | 0 | ⬜ |
-| F13 Observability & DR | 16 | 0 | 0 | ⬜ |
+| F13 Observability & DR | 16 | 1 | 0 | 🔄 |
 | F14 Bloom Competency Engine | 13 | 0 | 0 | ⬜ Added v1.1 — contracts startable now |
 
 ---
@@ -321,7 +321,14 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 - [ ] **TEST-01** Rewrite fake `api-integration.test.js` against real services — *H*
 - [~] **TEST-02** Remove dead code (empty `test_coach_with_signals.py`, stale Flask app in `search/retrieval/search.py:136–180`, agentService stub) — *H*
 - [ ] **TEST-03** Hybrid Playwright fixture (allow real API, mock only external) — *C*
-- [~] **TEST-04** Envelope + topology-parity contract tests both sides vs shared fixture; per-agent fixtures pending — *H* · deps: F01
+- [x] **TEST-04** Envelope + topology-parity contract tests both sides vs shared fixture — *H* · deps: F01
+  - Node suite: `tests/shared/ai-envelope.test.js`, `topology-parity.test.js`, `payload-schemas.test.js`,
+    `ai-publisher.test.js`, `dlq-replay.test.js` against the shared `docs/contracts/topology-fixture.json`
+  - Python mirror: `tests/test_ai_envelope_contract.py` + `tests/test_topology_parity.py` (same fixture)
+  - Wired into CI on both sides (jest `test:unit` runs `tests/shared/*`; `pytest tests/` runs the parity
+    tests) → a fixture/version mismatch fails CI
+  - Per-agent I/O fixtures remain planned under **TEST-05**
+  - Status verified by read-only code audit 2026-08-30
 - [ ] **TEST-05** Per-agent I/O contract fixtures — *H* · deps: F02..F05
 - [ ] **TEST-06** Auth negative tests — *H* · deps: SEC-01..07
 - [ ] **TEST-07** Cross-user authorization negative tests — *C* · deps: SEC-05, STUDY-03
@@ -368,7 +375,11 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 
 - [ ] **OPS-01** Structured logging (kill Python print(), safe logs) — *H* · deps: SEC-08
 - [ ] **OPS-02** Request-ID propagation — *H* · deps: OPS-01
-- [ ] **OPS-03** AI correlationId in logs + test — *H* · deps: OPS-02
+- [x] **OPS-03** AI correlationId in logs + test — *H* · deps: OPS-02
+  - `correlationId` logged at publish (`ai-orchestrator/src/routes/jobs.js`), consume/process
+    (`workers/base.py` + `workers/coach_worker.py`), result (`jobResultConsumer.js`)
+  - Job → result correlation verified by the AI round-trip integration test
+  - Status verified by read-only code audit 2026-08-30
 - [ ] **OPS-04** RabbitMQ queue metrics — *H* · deps: AI-COM-01
 - [ ] **OPS-05** AI latency histogram by type/status — *H* · deps: OPS-03
 - [ ] **OPS-06** AI failure counters + DLQ ingress rate — *H* · deps: OPS-03

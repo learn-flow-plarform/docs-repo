@@ -2849,7 +2849,7 @@ As a QA Engineer, I want Playwright fixtures that allow real API calls (mocking 
 
 ---
 
-#### TEST-04 — RabbitMQ Contract Tests
+#### TEST-04 — RabbitMQ Contract Tests ✅ done
 
 **User Story:**
 As a QA Engineer, I want the AI message contract tested on both sides so that Node and Python never drift.
@@ -2860,13 +2860,14 @@ As a QA Engineer, I want the AI message contract tested on both sides so that No
 **Estimated Hours:** 3
 **Story Points:** 3
 **Day:** 2–3
+**Status:** DONE (2026-08-30 — delivered with AI-COM-02/03; verified by read-only audit)
 
 **Dependencies:** F01 (AI-COM-02/03)
 
 **Acceptance Criteria:**
-- Contract fixtures shared by Node + Python tests
-- Node publisher fixture validated against Python schema and vice versa
-- Version mismatch fails CI
+- [x] Contract fixtures shared by Node + Python tests
+- [x] Node publisher fixture validated against Python schema and vice versa
+- [x] Version mismatch fails CI
 
 ---
 
@@ -3672,7 +3673,7 @@ As a Platform Engineer, I want request IDs propagated across services so that a 
 
 ---
 
-#### OPS-03 — AI Correlation IDs
+#### OPS-03 — AI Correlation IDs ✅ done
 
 **User Story:**
 As a Platform Engineer, I want AI job correlation visible in logs so that job lifecycle is debuggable.
@@ -3683,12 +3684,13 @@ As a Platform Engineer, I want AI job correlation visible in logs so that job li
 **Estimated Hours:** 2
 **Story Points:** 2
 **Day:** 1–2
+**Status:** DONE (2026-08-30 — delivered with the F01 job-bus suite; verified by read-only audit)
 
 **Dependencies:** AI-COM-02/03, OPS-02
 
 **Acceptance Criteria:**
-- `correlationId` logged at publish, consume, process, result
-- Job → result correlation verified by a test
+- [x] `correlationId` logged at publish, consume, process, result
+- [x] Job → result correlation verified by a test
 
 ---
 
