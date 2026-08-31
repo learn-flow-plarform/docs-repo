@@ -988,7 +988,7 @@ As a Backend engineer, I want the coaching API to create jobs and return their s
 
 ---
 
-#### COACH-11 — Coach E2E Tests
+#### COACH-11 — Coach E2E Tests ✅ done
 
 **User Story:**
 As a QA Engineer, I want an end-to-end coach test so that the coaching loop is proven through the job bus.
@@ -1000,11 +1000,14 @@ As a QA Engineer, I want an end-to-end coach test so that the coaching loop is p
 **Story Points:** 5
 **Day:** 5
 
+**Status:** DONE (2026-08-31, branches `coach-11` [api/ai/web] — real-bus round-trip + popup E2E)
+
 **Dependencies:** COACH-10
 
 **Acceptance Criteria:**
-- Playwright: user in active session → nudge requested → job completes (LLM mocked) → nudge rendered in chat
-- Negative: unauthenticated nudge request rejected
+- [x] Playwright: user in active session → nudge requested → job completes (LLM mocked) → nudge rendered in the coach popup
+- [x] Backend round-trip proven on the real job bus (real `CoachWorker`, `LLM_MOCK=1`)
+- [x] Negative: unauthenticated nudge request rejected
 
 ---
 

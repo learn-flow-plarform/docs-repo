@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-30 (COACH-10 node API shipped on `origin/coach-10`)
+**Last updated:** 2026-08-31 (COACH-11 E2E shipped on `origin/coach-11`)
 
 ---
 
@@ -16,7 +16,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 17 | 11 | 0 | 🔄 |
+| F03 AI Coach | 17 | 12 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
@@ -211,7 +211,19 @@ _Update the status column as stories are completed. Do not reorder IDs._
   - 8 new jest tests (202/400/404/503, session ownership, `current_time` default, cross-user scoping);
     `services/study` coach suite green, no regressions (5 pre-existing suite failures on base unchanged)
   - Branched + pushed `origin/coach-10`
-- [ ] **COACH-11** Coach E2E — *H* · deps: COACH-10
+- [x] **COACH-11** Coach E2E — *H* · deps: COACH-10
+  - Backend round-trip on the real job bus: `POST /api/v1/coach/nudge` → 202 → real `CoachWorker`
+    (`LLM_MOCK=1`) consumes `study.coach.nudge` → result consumer marks the `AiJob` COMPLETED with
+    the validated `CoachOutput` nudge → owner-scoped `GET /api/v1/coach/jobs/:jobId` returns it;
+    `correlationId` intact end-to-end, coach history persisted idempotently (COACH-09)
+  - New `tests/e2e_coach_worker.py` spawns the real worker for the harness
+    (`coach-roundtrip.integration.test.js`, real RabbitMQ; skips cleanly without a broker)
+  - `services/study` unit suite grown to 9 (new 401 negative: unauthenticated nudge rejected)
+  - Playwright `e2e/coach-nudge.spec.js`: mocked login → start session → `/api/v1/ai/coach` decision
+    → nudge rendered in the coach popup (`.coach-popup`); voice-personalized nudge UI lands later
+  - Bug fixed on the bus path: aware `current_time` (Node ISO instant) normalized to naive UTC at
+    `run_coach` entry so `is_late`/staleness checks no longer compare aware vs naive datetimes
+  - Branched + pushed `origin/coach-11` (api + ai + web); docs on `main`
 - [ ] **COACH-12** Coach injection tests — *H* · deps: COACH-06
 
 ### F03 expansion — adaptive coach beyond nudges (Sprint 3)
