@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-31 (COACH-12 prompt-injection regressions on `origin/coach-12`)
+**Last updated:** 2026-08-31 (COACH-13 session-stats feed on `origin/coach-13`)
 
 ---
 
@@ -16,7 +16,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 17 | 13 | 0 | 🔄 |
+| F03 AI Coach | 17 | 14 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
@@ -240,9 +240,18 @@ _Update the status column as stories are completed. Do not reorder IDs._
 
 Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 
-- [ ] **COACH-13** Session stats feed into coach context — *H* · deps: COACH-01
-  - `SessionStats` bounded schema (progress_pct, minutes_elapsed, task_switches, break_count, current_streak_days) supplied in the nudge payload
-  - `CoachInput` extended; missing/stale stats default instead of failing the job
+- [x] **COACH-13** Session stats feed into coach context — *H* · deps: COACH-01
+  - `SessionStats` bounded schema (progress_pct, minutes_elapsed, task_switches,
+    break_count, current_streak_days) supplied in the `study.coach.nudge` payload
+  - Derived server-side from the active `StudySession` (`progress = taskProgress`,
+    minutes from `startTime`, switches = `currentTaskIndex`, breaks from
+    `breakStats`) + the gamification streak; every figure clamped to its bound and
+    mirrored in `payloadSchemas.js` ⟷ `workers.schemas.py` — clients can never spoof stats
+  - `CoachInput` extended; missing/stale stats default to 0, never fail the job
+    (orchestrator re-resolves defensively); stats reach the LLM inside the TRUSTED
+    state block + new system/decision guidance uses them
+  - Unit + live-bus round trip green (336 python, 200 api, 2/2 broker);
+    branched + pushed `origin/coach-13` (api + ai)
 - [ ] **COACH-14** Course & subject awareness (catalog context) — *H* · deps: COACH-13
   - Coach loads the user's enrolled courses/subjects from the courses catalog; current task mapped to its subject
   - Bounded context (≤ 10 newest courses, no PII); catalog failure degrades to task-title-only

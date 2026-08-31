@@ -1052,7 +1052,7 @@ nudge path is live:
 
 ---
 
-#### COACH-13 — Session Stats Feed
+#### COACH-13 — Session Stats Feed ✅ done
 
 **User Story:**
 As an AI engineer, I want the coach to receive live session statistics (progress, time on task, recent completions, streak) so that nudges are grounded in the student's actual in-session behaviour.
@@ -1064,13 +1064,15 @@ As an AI engineer, I want the coach to receive live session statistics (progress
 **Story Points:** 3
 **Day:** 1
 
+**Status:** DONE (2026-08-31, branch `coach-13`)
+
 **Dependencies:** COACH-01
 
 **Acceptance Criteria:**
-- `SessionStats` schema: `progress_pct` (0–100), `minutes_elapsed` (0–600), `task_switches` (0–50), `break_count` (0–20), `current_streak_days` (0–365)
-- Stats feed supplied in the `study.coach.nudge` payload from the active session
-- `CoachInput` extended with session stats; missing or stale stats default, never fail the job
-- Stats bounded so the payload stays within the 16 KB CoachRequest cap
+- [x] `SessionStats` schema: `progress_pct` (0–100), `minutes_elapsed` (0–600), `task_switches` (0–50), `break_count` (0–20), `current_streak_days` (0–365)
+- [x] Stats feed supplied in the `study.coach.nudge` payload from the active session
+- [x] `CoachInput` extended with session stats; missing or stale stats default, never fail the job
+- [x] Stats bounded so the payload stays within the 16 KB CoachRequest cap
 
 ---
 
