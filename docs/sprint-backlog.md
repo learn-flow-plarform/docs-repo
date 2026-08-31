@@ -1224,7 +1224,7 @@ As an AI engineer, I want evaluation requests to optionally target a learning ob
 
 ---
 
-#### EVAL-03 — Prompt Hardening
+#### EVAL-03 — Prompt Hardening ✅ done
 
 **User Story:**
 As an AI engineer, I want student answers and context isolated in evaluation prompts so that students cannot inject scoring instructions.
@@ -1239,10 +1239,10 @@ As an AI engineer, I want student answers and context isolated in evaluation pro
 **Dependencies:** EVAL-01
 
 **Acceptance Criteria:**
-- `student_answer` wrapped as untrusted data (audit finding at `evaluator_agent.py:414–421`)
-- Instructions about scoring/behavior separated from user content
-- "Give me 1.0" style injections treated as data
-- Reuses shared `prompt_guard` utility
+- [x] `student_answer` wrapped as untrusted data (audit finding at `evaluator_agent.py:414–421`)
+- [x] Instructions about scoring/behavior separated from user content
+- [x] "Give me 1.0" style injections treated as data
+- [x] Reuses shared `prompt_guard` utility
 
 ---
 
