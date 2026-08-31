@@ -1291,7 +1291,7 @@ As an AI engineer, I want evaluator scoring to reference evidence from the stude
 
 ---
 
-#### EVAL-06 — Validation / Rejection
+#### EVAL-06 — Validation / Rejection ✅ done
 
 **User Story:**
 As an AI engineer, I want malformed or ungrounded evaluation outputs rejected before persistence so that bad scores never reach the UI.
@@ -1306,9 +1306,9 @@ As an AI engineer, I want malformed or ungrounded evaluation outputs rejected be
 **Dependencies:** EVAL-04
 
 **Acceptance Criteria:**
-- Reject missing fields, out-of-range scores, missing evidence quotes, incoherent question
-- One correction retry, then FAILED with sanitized reason
-- Rejection logged with full LLM response for debugging
+- [x] Reject missing fields, out-of-range scores, missing evidence quotes, incoherent question
+- [x] One correction retry, then FAILED with sanitized reason
+- [x] Rejection logged with full LLM response for debugging
 
 ---
 
