@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-31 (COACH-13 session-stats feed on `origin/coach-13`)
+**Last updated:** 2026-08-31 (COACH-14 course catalog on `origin/coach-14`)
 
 ---
 
@@ -16,7 +16,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 17 | 14 | 0 | 🔄 |
+| F03 AI Coach | 18 | 14 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
@@ -252,7 +252,18 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
     state block + new system/decision guidance uses them
   - Unit + live-bus round trip green (336 python, 200 api, 2/2 broker);
     branched + pushed `origin/coach-13` (api + ai)
-- [ ] **COACH-14** Course & subject awareness (catalog context) — *H* · deps: COACH-13
+- [x] **COACH-14** Course & subject awareness (catalog context) — *H* · deps: COACH-13
+  - `CourseRepository` reads the shared `courses`/`subjects` collections; newest ≤ 10
+    courses reduced to subject + title + ≤ 15 key concepts (no files/urls/descriptions)
+  - Session `taskProgress.currentTaskIndex` task mapped to course subject via
+    `courseId → subjectId → subjects.name`
+  - Catalog reaches the prompt ONLY as UNTRUSTED DATA (COURSE / COURSE_CONCEPTS
+    channels); the trusted state carries just the count; current-task subject context
+    is already a wrapped channel — injection-safe
+  - Catalog + current-task resolve independently, so an outage degrades to
+    task-title-only (or catalog-only) and never fails the job; no PII carried
+  - 413 python / 33 api-jest / 2 live roundtrip green; branched + pushed
+    `origin/coach-14` (ai)
   - Coach loads the user's enrolled courses/subjects from the courses catalog; current task mapped to its subject
   - Bounded context (≤ 10 newest courses, no PII); catalog failure degrades to task-title-only
 - [ ] **COACH-15** Emotion detection ML adapter — *H* · deps: COACH-13

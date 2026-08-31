@@ -1076,7 +1076,7 @@ As an AI engineer, I want the coach to receive live session statistics (progress
 
 ---
 
-#### COACH-14 — Course & Subject Awareness
+#### COACH-14 — Course & Subject Awareness ✅ done
 
 **User Story:**
 As an AI engineer, I want the coach to know which courses and subjects the user studies so that nudges reference the correct domain, prerequisites and vocabulary.
@@ -1090,11 +1090,13 @@ As an AI engineer, I want the coach to know which courses and subjects the user 
 
 **Dependencies:** COACH-13
 
+**Status:** DONE (2026-08-31, branch `coach-14`)
+
 **Acceptance Criteria:**
-- Coach loads the user's enrolled courses and subjects from the course catalog (courses collection)
-- Current task mapped to its course/subject; the prompt references the subject context
-- Bounded context: subject title + key concepts per course, newest courses only (≤ 10)
-- No PII; catalog fetch failure degrades to task-title-only context
+- [x] Coach loads the user's enrolled courses and subjects from the course catalog (courses collection)
+- [x] Current task mapped to its course/subject; the prompt references the subject context
+- [x] Bounded context: subject title + key concepts per course, newest courses only (≤ 10)
+- [x] No PII; catalog fetch failure degrades to task-title-only context
 
 ---
 
