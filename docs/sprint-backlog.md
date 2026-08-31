@@ -1158,7 +1158,7 @@ The evaluator currently passes raw `student_answer` into the analysis prompt (`e
 
 ---
 
-#### EVAL-01 — Evaluator Worker
+#### EVAL-01 — Evaluator Worker ✅ done
 
 **User Story:**
 As an AI engineer, I want the evaluator to consume `study.eval.step` jobs through `EvaluatorWorker` so that evaluation steps run inside the job bus.
@@ -1173,10 +1173,10 @@ As an AI engineer, I want the evaluator to consume `study.eval.step` jobs throug
 **Dependencies:** AI-COM-05
 
 **Acceptance Criteria:**
-- `EvaluatorWorker` extends `BaseAIWorker`
-- Multi-turn evaluation state machine retained (not simplified)
-- ACK/NACK per policy
-- No direct HTTP exposure for evaluation remains
+- [x] `EvaluatorWorker` extends `BaseAIWorker`
+- [x] Multi-turn evaluation state machine retained (not simplified)
+- [x] ACK/NACK per policy
+- [x] No direct HTTP exposure for evaluation remains
 
 ---
 

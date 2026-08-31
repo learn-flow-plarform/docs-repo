@@ -17,7 +17,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
 | F03 AI Coach | 18 | 15 | 0 | 🔄 |
-| F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
+| F04 AI Evaluator | 10 | 1 | 0 | 🔄 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
 | F07 Study Reliability | 11 | 2 | 0 | 🔄 |
@@ -276,7 +276,7 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 
 ## F04 — AI Evaluator (Sprint 2)
 
-- [ ] **EVAL-01** EvaluatorWorker consumes `study.eval.step` — *H* · deps: AI-COM-05
+- [x] **EVAL-01** EvaluatorWorker consumes `study.eval.step` — *H* · deps: AI-COM-05
 - [ ] **EVAL-02** EvaluationRequest contract + state rehydration — *H* · deps: AI-COM-02
 - [ ] **EVAL-03** Prompt hardening (student_answer untrusted) — *C* · deps: EVAL-01
 - [ ] **EVAL-04** EvaluationOutput schema (5 dims + mastery) — *H* · deps: EVAL-01
