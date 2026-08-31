@@ -1268,7 +1268,7 @@ As an AI engineer, I want evaluation scoring parsed into a strict schema so that
 
 ---
 
-#### EVAL-05 — Evidence Grounding
+#### EVAL-05 — Evidence Grounding ✅ done
 
 **User Story:**
 As an AI engineer, I want evaluator scoring to reference evidence from the student's answer so that scores are auditable and hallucination-resistant.
@@ -1283,11 +1283,11 @@ As an AI engineer, I want evaluator scoring to reference evidence from the stude
 **Dependencies:** EVAL-03
 
 **Acceptance Criteria:**
-- Each dimension score includes an evidence quote (max 200 chars) from the answer
-- Evidence items structured as `{dimension, quote}` so they can be reused directly as competency `evidence[]` entries in the F14 profile store
-- Scores without evidence quotes are rejected at validation
-- Guessing detection retained and reported in the output
-- Mastery scoring formula retained with its smoothing guard (reused by BLOOM-07's estimator)
+- [x] Each dimension score includes an evidence quote (max 200 chars) from the answer
+- [x] Evidence items structured as `{dimension, quote}` so they can be reused directly as competency `evidence[]` entries in the F14 profile store
+- [x] Scores without evidence quotes are rejected at validation
+- [x] Guessing detection retained and reported in the output
+- [x] Mastery scoring formula retained with its smoothing guard (reused by BLOOM-07's estimator)
 
 ---
 
