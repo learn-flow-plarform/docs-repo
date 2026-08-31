@@ -1246,7 +1246,7 @@ As an AI engineer, I want student answers and context isolated in evaluation pro
 
 ---
 
-#### EVAL-04 — Output Schema
+#### EVAL-04 — Output Schema ✅ done
 
 **User Story:**
 As an AI engineer, I want evaluation scoring parsed into a strict schema so that scores are type-safe and bounded.
@@ -1261,10 +1261,10 @@ As an AI engineer, I want evaluation scoring parsed into a strict schema so that
 **Dependencies:** EVAL-01
 
 **Acceptance Criteria:**
-- `EvaluationOutput` schema: 5 dimension scores (concept coverage, logical coherence, causal reasoning, error awareness, specificity), each 0.0–1.0, plus `mastery_score`, `next_question`, `session_status`
-- Bloom fields (F14): `targetBloomLevel` (echoed from the objective) + `demonstratedBloomLevel` — the cognitive operation the answer actually shows; the two MAY differ
-- Structured extraction + validation
-- Out-of-range values rejected
+- [x] `EvaluationOutput` schema: 5 dimension scores (concept coverage, logical coherence, causal reasoning, error awareness, specificity), each 0.0–1.0, plus `mastery_score`, `next_question`, `session_status`
+- [x] Bloom fields (F14): `targetBloomLevel` (echoed from the objective) + `demonstratedBloomLevel` — the cognitive operation the answer actually shows; the two MAY differ
+- [x] Structured extraction + validation
+- [x] Out-of-range values rejected
 
 ---
 
