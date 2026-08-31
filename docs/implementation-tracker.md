@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-31 (COACH-14 course catalog on `origin/coach-14`)
+**Last updated:** 2026-08-31 (COACH-16 reschedule agent on `origin/coach-16`)
 
 ---
 
@@ -16,7 +16,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 18 | 14 | 0 | 🔄 |
+| F03 AI Coach | 18 | 15 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
@@ -269,9 +269,10 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 - [ ] **COACH-15** Emotion detection ML adapter — *H* · deps: COACH-13
   - `EmotionAdapter` produces `affective_state` + confidence, mirroring focus/fatigue adapters
   - Removes hardcoded `engaged` at `services/ai_orchestrator/orchestrator.py`
-- [ ] **COACH-16** Reschedule agent integration — *H* · deps: COACH-01
+- [x] **COACH-16** Reschedule agent integration — *H* · deps: COACH-01
   - Coach result with `schedule_changes` → `study.schedule.apply` job consumed by the reschedule agent
   - ScheduleOrchestrator applies changes in the worker path (no direct HTTP), idempotent by correlationId, logged to `schedule_history`
+  - Coach result surfaces `schedule_update.status` (success/no_changes/error) via correlated await bridge — never silent
 
 ## F04 — AI Evaluator (Sprint 2)
 

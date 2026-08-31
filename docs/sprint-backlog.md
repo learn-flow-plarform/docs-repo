@@ -1122,7 +1122,7 @@ As an AI engineer, I want an ML emotion adapter that feeds the student's emotion
 
 ---
 
-#### COACH-16 — Reschedule Agent Integration
+#### COACH-16 — Reschedule Agent Integration ✅ done
 
 **User Story:**
 As an AI engineer, I want the coach to trigger the reschedule agent when a nudge is insufficient so that plan changes are applied automatically inside the job bus.
@@ -1136,11 +1136,13 @@ As an AI engineer, I want the coach to trigger the reschedule agent when a nudge
 
 **Dependencies:** COACH-01
 
+**Status:** DONE (2026-08-31, branches `coach-16` on `study-partner-ai` + `study-partner-api`)
+
 **Acceptance Criteria:**
-- Coach result carrying `schedule_changes` publishes a schedule job (new `study.schedule.apply` type) consumed by the reschedule agent
-- ScheduleOrchestrator applies changes transactionally through the worker path, not direct HTTP
-- Idempotent by correlationId; every change logged in `schedule_history`
-- Reschedule failure returns `schedule_update.status = error` in the coach result, never silent
+- [x] Coach result carrying `schedule_changes` publishes a schedule job (new `study.schedule.apply` type) consumed by the reschedule agent
+- [x] ScheduleOrchestrator applies changes transactionally through the worker path, not direct HTTP
+- [x] Idempotent by correlationId; every change logged in `schedule_history`
+- [x] Reschedule failure returns `schedule_update.status = error` in the coach result, never silent
 
 ---
 
