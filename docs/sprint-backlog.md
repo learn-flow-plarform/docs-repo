@@ -1011,7 +1011,7 @@ As a QA Engineer, I want an end-to-end coach test so that the coaching loop is p
 
 ---
 
-#### COACH-12 — Prompt-Injection Tests
+#### COACH-12 — Prompt-Injection Tests ✅ done
 
 **User Story:**
 As a Security Engineer, I want coach-specific prompt-injection regression tests so that chat-input injection stays fixed.
@@ -1023,12 +1023,14 @@ As a Security Engineer, I want coach-specific prompt-injection regression tests 
 **Story Points:** 3
 **Day:** 5
 
+**Status:** DONE (2026-08-31, branch `coach-12`)
+
 **Dependencies:** COACH-06
 
 **Acceptance Criteria:**
-- Injection payloads embedded in chat messages and signal context tested
-- Assert nudge category/intensity unaffected by injected instructions
-- Runs in pytest with mocked LLM
+- [x] Injection payloads embedded in chat messages and signal context tested
+- [x] Assert nudge category/intensity unaffected by injected instructions
+- [x] Runs in pytest with mocked LLM
 
 ---
 

@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-31 (COACH-11 E2E shipped on `origin/coach-11`)
+**Last updated:** 2026-08-31 (COACH-12 prompt-injection regressions on `origin/coach-12`)
 
 ---
 
@@ -16,7 +16,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 |---|---|---|---|---|
 | F01 AI Communication & Jobs | 10 | 10 | 0 | ✅ Complete — Sprint 1 gate passed, silent-drop hole closed |
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
-| F03 AI Coach | 17 | 12 | 0 | 🔄 |
+| F03 AI Coach | 17 | 13 | 0 | 🔄 |
 | F04 AI Evaluator | 10 | 0 | 0 | ⬜ Blocked by F01 |
 | F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
@@ -224,7 +224,17 @@ _Update the status column as stories are completed. Do not reorder IDs._
   - Bug fixed on the bus path: aware `current_time` (Node ISO instant) normalized to naive UTC at
     `run_coach` entry so `is_late`/staleness checks no longer compare aware vs naive datetimes
   - Branched + pushed `origin/coach-11` (api + ai + web); docs on `main`
-- [ ] **COACH-12** Coach injection tests — *H* · deps: COACH-06
+- [x] **COACH-12** Coach injection tests — *H* · deps: COACH-06
+  - New `tests/test_coach_prompt_injection.py` (116 tests) — coach-specific prompt-injection
+    regressions over the shared nonce-delimited UNTRUSTED blocks (`security/prompt_guard` +
+    `agents.coach.decision.prompt`)
+  - Injection payloads embedded in chat/history messages, task titles, subjects and key
+    concepts: each must appear ONLY inside its labelled UNTRUSTED block — never in the trusted
+    signal-state JSON, decision instructions, or SYSTEM_PROMPT; forged `<<<END_UNTRUSTED_...>>>`
+    markers stay inert; PII (emails, titled names) redacted before wrapping
+  - AC#2 proven with a mocked LLM: a deterministic responder derives the nudge solely from the
+    trusted state block; category/intensity/message identical across every probe and channel combo
+  - Suite green 306/306 (190 prior + 116 new); branched + pushed `origin/coach-12`
 
 ### F03 expansion — adaptive coach beyond nudges (Sprint 3)
 
