@@ -1180,7 +1180,7 @@ As an AI engineer, I want the evaluator to consume `study.eval.step` jobs throug
 
 ---
 
-#### EVAL-02 — Evaluation Input Contract
+#### EVAL-02 — Evaluation Input Contract ✅ done
 
 **User Story:**
 As a Backend engineer, I want evaluation requests carried by a strict contract so that session and step data are validated before reaching the agent.
@@ -1192,13 +1192,35 @@ As a Backend engineer, I want evaluation requests carried by a strict contract s
 **Story Points:** 2
 **Day:** 1
 
-**Dependencies:** AI-COM-02
+**Dependencies:** AI-COM-02, EVAL-01
 
 **Acceptance Criteria:**
-- `EvaluationRequest` schema: `sessionId`, `step` (int), `student_answer` (1–5000 chars), `context_id`
-- Optional `objectiveId`: when the session targets a learning objective (F14), its `bloomLevel` + `knowledgeType` are loaded server-side and carried as evaluation context
-- Session state rehydration: the worker loads prior turns from the state store (in-memory sessions from `evaluator_agent.py` are not reliable across restarts)
-- `userId` from authenticated context only
+- [x] `EvaluationRequest` schema: camelCase wire fields `sessionId`, `step` (int ≥ 1), `studentAnswer` (1–5000 chars), `contextId`; `extra="forbid"`; validated in `EvaluatorWorker` (malformed → terminal)
+- [ ] Objective targeting (`objectiveId` → bloomLevel + knowledgeType) — deferred to **EVAL-02b** (F14/BLOOM dependent)
+- [x] Session state rehydration: the worker loads prior turns from the state store (in-memory sessions from `evaluator_agent.py` are not reliable across restarts)
+- [x] `userId` from authenticated context only
+
+---
+
+#### EVAL-02b — Evaluation Objective Targeting
+
+**User Story:**
+As an AI engineer, I want evaluation requests to optionally target a learning objective so that a session's Bloom level and knowledge type shape the questions and scoring.
+
+**Domain:** AI
+**Type:** Feature
+**Priority:** Medium
+**Estimated Hours:** 3
+**Story Points:** 3
+**Day:** (after F14)
+
+**Dependencies:** EVAL-02, F14/BLOOM (learning objectives)
+
+**Acceptance Criteria:**
+- `EvaluationRequest` carries optional `objectiveId`
+- When present, the objective's `bloomLevel` + `knowledgeType` (F14 model) are loaded server-side and carried as evaluation context
+- Session targets the objective's Bloom level for question depth and demonstrates the resulting level on mastery
+- `objectiveId`/`targetBloomLevel` join the persisted step result for BLOOM-08 competency updates
 
 ---
 
