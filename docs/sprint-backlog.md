@@ -1376,9 +1376,11 @@ As a Backend engineer, I want the evaluation API to create jobs and return statu
 **Dependencies:** EVAL-08
 
 **Acceptance Criteria:**
-- `POST /api/v1/eval/step` returns `202 { jobId }`
-- `GET /api/v1/eval/jobs/{jobId}` returns status + step result
-- Frontend `SocraticEvaluation` component consumes the async API
+- [x] `POST /api/v1/eval/step` returns `202 { jobId }`
+- [x] `GET /api/v1/eval/jobs/{jobId}` returns status + step result
+- [x] Frontend `SocraticEvaluation` component consumes the async API
+
+✅ done — PRs awaited (study-partner-api `eval-09@b420bca`, study-partner-web `eval-09@b1ee95e`). Node: `routes/eval.js` POST `/api/v1/eval/step` (validate eval payload → `AiJob.createPending` → `publishAiJob('study.eval.step')` → 202 `{ jobId, status, correlationId, sessionId, step, poll }`; rolls back PENDING job on publish failure) + GET `/api/v1/eval/jobs/:jobId` (owner-scoped, eval-type only) mounted under `/api/v1/eval` with `authenticate` + AI rate limit on the step; 9 route tests (`eval-routes.test.js`). Web: `SocraticEvaluation` now polls the job API (`submitEvalStep`/`getEvalJob`) instead of legacy sync endpoints — client-generated `sessionId`, step increments per answer, `taskTitle` as `contextId`, CONTINUE walks `next_question`, mastery_confirmed/failed ends; 4 vitest tests.
 
 ---
 
