@@ -4122,6 +4122,8 @@ As an AI engineer, I want ingestion to extract concepts and draft measurable lea
 - Cap per document (e.g., ≤ 40 objectives) to bound cost; truncation reported in job result
 - Extraction failure degrades gracefully: ingestion completes without objectives, warning emitted
 
+✅ done — AI `feature/bloom-04-objective-extraction`@cfbbacb (PR #26, targeting `bloom`, unmerged). New `agents/course_ingestion/enrichment/objective_extractor.py` stage wired in `ingest_course` as Step 4b between enrich (Step 4) and tokenize (Step 5). Prompt hardened via `prompt_guard.wrap_untrusted` (nonce-delimited `SUBTITLE` + `COURSE_MATERIAL` blocks, system instructions isolated). Every LLM draft validated against BLOOM-02 `LearningObjective` (rejections logged, never silently dropped; validation never causes ingestion failure). Dedup by `(topicId, normalized text)` keeping first occurrence; per-document cap `OBJECTIVE_CAP_PER_DOCUMENT = 40` with truncation reported in stats + logged warning. Empty/unparseable LLM output or an exception → `[]` + warning, ingestion completes without objectives. Deterministic content-addressed `objectiveId` (sha256 of topicId+text) stable across re-runs. `Subtopic.learning_objectives` added to `normalization/schema.py` so objectives persist in the course JSON. 14 unit tests (prompt hardening, schema validation/rejection, dedup incl. case/whitespace normalization, cap+re-scatter, graceful failure, empty-subtopic skip). Verification: 56 tests pass across extractor + bloom/parity suites; pre-existing baselines unchanged (embedder needs live embedder, `agents/tests` collection needs `faiss`).
+
 ---
 
 #### BLOOM-05 — Bloom Classification & Confidence Gate
