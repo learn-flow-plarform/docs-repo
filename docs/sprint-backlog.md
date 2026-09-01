@@ -1328,9 +1328,11 @@ As a Platform Engineer, I want evaluation jobs retried per policy so that transi
 **Dependencies:** AI-COM-06
 
 **Acceptance Criteria:**
-- Timeout/quota failures → retry/DLQ policy
-- Session remains in the state store across retries (state machine must be retry-safe)
-- Idempotent by `messageId`: replaying a step does not double-count
+- [x] Timeout/quota failures → retry/DLQ policy
+- [x] Session remains in the state store across retries (state machine must be retry-safe)
+- [x] Idempotent by `messageId`: replaying a step does not double-count
+
+> **✅ done (EVAL-07):** Implemented on `eval-07` (`dee6754`). Validate-then-mutate session state so a transient LLM failure surfaces as `RetryableError` before mutation; the AI-COM-06 worker policy retries/DLQs, and a retried step never double-counts attempts/answers. `GeminiClient.generate(raise_on_error=True)` propagates transient errors; non-transient failures keep the defensive local-scoring fallback. 12 tests in `tests/test_evaluator_retry.py`.
 
 ---
 
