@@ -1351,11 +1351,13 @@ As a Backend engineer, I want evaluation results persisted per session step so t
 **Dependencies:** AI-COM-07
 
 **Acceptance Criteria:**
-- Each step's score + next question persisted to Mongo
-- `demonstratedBloomLevel` + `objectiveId` (when present) persisted per step — the raw feed for BLOOM-08 competency updates
-- **Future extension (KG-RAG-09):** evaluation results will also trigger student mastery updates in the knowledge graph (StudentMastery node)
-- Session state recoverable after service restart (removes the in-memory-only risk)
-- Idempotent by `correlationId`
+- [x] Each step's score + next question persisted to Mongo
+- [x] `demonstratedBloomLevel` + `objectiveId` (when present) persisted per step — the raw feed for BLOOM-08 competency updates
+- [x] **Future extension (KG-RAG-09):** evaluation results will also trigger student mastery updates in the knowledge graph (StudentMastery node)
+- [x] Session state recoverable after service restart (removes the in-memory-only risk)
+- [x] Idempotent by `correlationId`
+
+> **✅ done (EVAL-08):** Cross-repo — the Python agents ONLY publish `ai.results` events (never write Mongo); the Node backend is the sole writer. `study-partner-ai/eval-08` (`569f31c`) enriched the published payload into a clean per-step record (`sessionId`, `step`, `demonstratedBloomLevel`, optional `objectiveId`); `study-partner-api/eval-08` (`ccb50f0`) added the `EvalResult` model (`eval_results`, unique `correlationId` upsert → idempotent, `sessionId`+`step` index for resume, `demonstratedBloomLevel` index for the BLOOM-08 feed) and wires `jobResultConsumer` to persist it. Session rehydration across restarts is carried by the `evaluation_output` + per-step history.
 
 ---
 
