@@ -27,7 +27,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F11 Infrastructure & Deploy | 13 | 0 | 0 | ⬜ |
 | F12 UX & Frontend | 12 | 0 | 0 | ⬜ |
 | F13 Observability & DR | 16 | 1 | 0 | 🔄 |
-| F14 Bloom Competency Engine | 13 | 2 | 0 | 🔄 BLOOM-01/02 done — contracts shipping |
+| F14 Bloom Competency Engine | 13 | 3 | 0 | 🔄 BLOOM-01/02/03 done — contracts shipping |
 | F15 Knowledge Graph & Graph RAG | 15 | 0 | 0 | ⬜ Added v1.2 — schema startable in Sprint 6 |
 
 ---
@@ -456,7 +456,7 @@ Two-dimensional revised taxonomy (Anderson & Krathwohl 2001): 6 cognitive levels
 
 - [x] **BLOOM-01** Shared taxonomy constants: Node `shared/bloom/taxonomy.js` + Python `bloom/taxonomy.py` + `docs/contracts/bloom-fixture.json` parity tests — *C* · deps: none
 - [x] **BLOOM-02** `LearningObjective` contract + measurable-verb validation — *C* · deps: BLOOM-01
-- [ ] **BLOOM-03** `study.knowledge.extract` job type in topology/envelope both sides — *H* · deps: BLOOM-02
+- [x] **BLOOM-03** `study.knowledge.extract` job type in topology/envelope both sides — *H* · deps: BLOOM-02
 - [ ] **BLOOM-04** Ingestion extraction stage (between enrich & chunk), prompt-guarded, dedup, ≤40/doc cap, graceful degradation — *H* · deps: BLOOM-03, INGEST-06
 - [ ] **BLOOM-05** LLM classification ×2 dimensions, verb-consistency check, confidence <0.6 → needsReview — *H* · deps: BLOOM-04
 - [ ] **BLOOM-06** `learning_objectives` collection + indexes + versioned re-ingestion — *H* · deps: BLOOM-05

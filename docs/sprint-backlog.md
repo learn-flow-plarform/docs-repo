@@ -4097,6 +4097,8 @@ As an AI engineer, I want a `study.knowledge.extract` job type on the bus so tha
 - Input contract: `{documentId, courseId, contentRef}` — raw content loaded from storage, never inline in the envelope
 - Orchestrator declares work/DLQ/delay queues for the type at boot (existing ensureTopologyForType flow)
 
+✅ done — AI `feature/bloom-03-knowledge-extract`@49fc32f (PR #25) + API `feature/bloom-03-knowledge-extract`@a5a8ed3 (PR #9), both targeting `bloom` (unmerged). `study.knowledge.extract` added to Node `AI_JOB_TYPES` (`shared/ai-messaging/envelope.js`) and Python frozenset mirror (`messaging/envelope.py`) — parity tests on both sides parametrize over the full set so the new type is auto-covered. Input-contract validation added both sides: Node `validateKnowledgeExtractPayload` (`shared/ai-messaging/payloadSchemas.js`, `{documentId, courseId, contentRef}` with limits 64/64/256, raw content never inline) + Python `KnowledgeExtractRequest` (`workers/schemas.py`, `extra="forbid"`, same limits, blank strings rejected). Orchestrator needs no change — `services/ai-orchestrator/src/server.js` already loops `AI_JOB_TYPES` calling `ensureTopologyForType` at boot and the queue-name helpers are generic. Tests: API 29 (envelope+schemas+taxonomy) and 67 (shared+study) pass, prettier clean; AI 39 (schema+envelope+bloom) and 101 (full `tests/`, minus pre-existing coach baseline) pass; no shared fixture change required (`topology-fixture.json` only samples `study.plan.generate`).
+
 ---
 
 #### BLOOM-04 — Objective Extraction Stage
