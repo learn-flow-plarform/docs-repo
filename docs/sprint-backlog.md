@@ -1402,6 +1402,8 @@ As a QA Engineer, I want an end-to-end evaluation test so that the Socratic flow
 - Playwright: user answers question → eval job completes (LLM mocked) → next question displayed → session completes with mastery score
 - Negative: submitting an empty answer shows validation feedback
 
+✅ done — PR awaited (study-partner-web `eval-10@606c699`, PR #4 → `AI-evaluator`). Playwright `e2e/eval-e2e.spec.js` (2 green tests) proves the async job flow at the API boundary (LLM mocked via `POST /api/v1/eval/step` → `GET /api/v1/eval/jobs/:jobId`), no backend/broker required: seed login (`auth-storage`) + seeded `sessionStore` into the full task view → MARK COMPLETE (mocked task-complete) opens the Socratic card → step 1 CONTINUE shows `next_question` (Q2) → step 2 `mastery_confirmed` 0.9 → "Evaluation Passed" + 90%. E2E surfaced two real bugs fixed in this story: `aliveRef` died under StrictMode double-mount (submits silently dropped) and the card unmounted on `onComplete` in the same batch so the mastery result never painted. `SocraticEvaluation` vitest: 7 passing incl. a StrictMode regression. eslint override disables testing-library `prefer-screen-queries` for `e2e/` (Playwright locators).
+
 ---
 
 ## 6. F05 — AI Search & Ingestion (SEARCH / INGEST)
