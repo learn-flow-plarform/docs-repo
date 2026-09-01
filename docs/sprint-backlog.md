@@ -4050,6 +4050,8 @@ As an AI engineer, I want the taxonomy enums and verb maps defined once and mirr
 - Shared fixture `docs/contracts/bloom-fixture.json`; parity BLOOM-01 — Shared Taxonomy Constantstests on both sides (pattern of AI-COM-06)
 - Progression helper: `nextLevel(level)` / `unlockThreshold = 0.7`
 
+✅ done — AI `bloom@ca5edab` (PR #16) + API `bloom@3e9e58f` (PR #6), awaiting merge to main. Node `shared/bloom/taxonomy.js` (Object.freeze'd) mirrors Python `bloom/taxonomy.py` (tuples) and both match `docs/contracts/bloom-fixture.json` byte-for-byte; `UNLOCK_THRESHOLD = 0.7` + camelCase `unlockThreshold` alias; `nextLevel()` walks the progression and returns null at 'create'/unknown. Parity tests run in CI on both sides: API (`jest.config.js` testMatch `**/tests/**/*.test.js` → BLoom parity 5 tests) and AI (`.github/workflows/ai.yml` extended to lint `bloom/ models/ tests/` and run `pytest tests/` at repo root; `pyproject.toml` `testpaths` now includes `"tests"` so a bare `pytest` collects them too). 14 AI + 5 API parity/progression tests pass.
+
 ---
 
 #### BLOOM-02 — Learning Objective Contract
@@ -4071,6 +4073,8 @@ As a Backend engineer, I want learning objectives represented by a strict schema
 - Validation rejects: verbs not in the level's verb map, non-measurable phrasings ("know", "be familiar with"), empty text
 - Objective text ≤ 200 chars; verb must appear at/near the start of `text`
 - Rejected objectives logged for curation, never silently dropped
+
+✅ done — AI Pydantic `models/learning_objective.py` + API `validators/learningObjective.js`, awaiting merge. Same 6-field contract (`objectiveId, topicId, knowledgeType, bloomLevel, verb, text`) with snake_case/camelCase aliases on the Pydantic side. Rejects: verbs outside the level's verb map, non-measurable phrasings (`know`, `be familiar with`, `understand`, `learn about`, `be aware of`, `grasp`), empty text, >200 chars, verb not at/near the start (first 3 words). **Parity verified locally edge-for-edge** (accept/reject identical Node vs Python). Rejections logged via `console.warn` (`learningObjectives.js`) / call-site catch (`learning_objective.py` docstring) — never silently dropped. API route `POST /api/v1/study/learning-objectives` returns `200` echo (valid) / `400 {errors}` (invalid); 16 validator+route tests (supertest) pass, plus 8 Pydantic model tests.
 
 ---
 
