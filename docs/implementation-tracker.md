@@ -28,6 +28,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F12 UX & Frontend | 12 | 0 | 0 | ⬜ |
 | F13 Observability & DR | 16 | 1 | 0 | 🔄 |
 | F14 Bloom Competency Engine | 13 | 0 | 0 | ⬜ Added v1.1 — contracts startable now |
+| F15 Knowledge Graph & Graph RAG | 15 | 0 | 0 | ⬜ Added v1.2 — schema startable in Sprint 6 |
 
 ---
 
@@ -466,6 +467,28 @@ Two-dimensional revised taxonomy (Anderson & Krathwohl 2001): 6 cognitive levels
 - [ ] **BLOOM-11** Frontend competency radar + task level badges — *M* · deps: BLOOM-09
 - [ ] **BLOOM-12** E2E: ingest→objectives→eval→profile→plan loop; idempotency replay test; parity in CI — *H* · deps: BLOOM-10/11
 - [ ] **BLOOM-DOC** `docs/education/bloom-taxonomy.md` (2001 revision, both dimensions, estimator math, anti-patterns) — *M* · deps: BLOOM-01
+
+---
+
+## F15 — Knowledge Graph & Graph RAG Infrastructure (Sprint 7 recommended; schema startable in Sprint 6)
+
+Graph-based retrieval layer extending flat vector RAG. Provides prerequisite-aware traversal, misconception mapping, student mastery tracing, and reference answer storage. Depends on F05/INGEST for entity extraction triggers, F14/BLOOM for competency data, F04/EVAL for reference answers.
+
+- [ ] **KG-RAG-01** Graph RAG core schema & Neo4j setup: Concept/Subtopic/Question/Misconception/StudentMastery nodes + Prerequisite/MisconceptionPath/BloomEdge relations + constraints + indexes — *H* · deps: AI-COM-01
+- [ ] **KG-RAG-02** Entity & relation extraction pipeline: LLM-powered extraction during course ingestion, writes to Neo4j, graceful degradation — *H* · deps: KG-RAG-01, INGEST-05
+- [ ] **KG-RAG-03** Graph RAG retrieval service: `GraphRAGClient` with traversal-based retrieval (prerequisite chain, misconception path, similar situation), circuit breaker, <500ms target — *H* · deps: KG-RAG-01, KG-RAG-02
+- [ ] **KG-RAG-04** Pedagogical Knowledge Base: concept hierarchy, prerequisite chains, Bloom verb maps, difficulty calibrations seeded in graph — *H* · deps: KG-RAG-01, BLOOM-01
+- [ ] **KG-RAG-05** Misconception Knowledge Base: misconception nodes mapped to corrective paths and prerequisite gaps, 30+ seeded misconceptions — *M* · deps: KG-RAG-01, BLOOM-01
+- [ ] **KG-RAG-06** Reference Answer Store: versioned canonical answers with rubrics and Bloom-level tags, bulk import support — *H* · deps: INGEST-05, EVAL-02
+- [ ] **KG-RAG-07** Student Knowledge Graph: per-student mastery nodes, prerequisite gap computation, recommended-next-concept via graph traversal — *H* · deps: KG-RAG-03, BLOOM-02, F14-EST
+- [ ] **KG-RAG-08** Planner Agent Graph RAG integration: prerequisite-aware plan generation, Bloom-level ordering, graceful fallback — *H* · deps: KG-RAG-03, KG-RAG-07, PLAN-07
+- [ ] **KG-RAG-09** Evaluator Agent RAG integration: reference answer retrieval, misconception diagnosis, student mastery update — *H* · deps: KG-RAG-03, KG-RAG-05, KG-RAG-06, KG-RAG-07, EVAL-06
+- [ ] **KG-RAG-10** Coach Agent RAG integration: prerequisite-aware explanations, misconception addressing, pedagogical KB lookup — *H* · deps: KG-RAG-03, KG-RAG-07, COACH-09
+- [ ] **KG-RAG-11** Search Agent Personal Corpus RAG: hybrid kNN + graph retrieval, course-grounded results with source tagging — *M* · deps: KG-RAG-03, SEARCH-05, INGEST-05
+- [ ] **KG-RAG-12** Reflection Agent RAG: past reflection retrieval, outcome correlation, theme-based similar-reflection matching — *M* · deps: KG-RAG-03, REFLECTION-02
+- [ ] **KG-RAG-13** Graph RAG observability: structured logs, Prometheus metrics, Grafana dashboard, fallback-rate alerts — *M* · deps: KG-RAG-03, OPS-01
+- [ ] **KG-RAG-14** Graph RAG E2E + load tests: full pipeline test (ingest→extract→graph→eval→coach), 100 concurrent requests p95 <1s — *M* · deps: KG-RAG-08, KG-RAG-09, KG-RAG-10, TEST-01
+- [ ] **KG-RAG-15** Documentation & runbook: architecture.md, agent-integration.md, troubleshooting.md, performance.md, runbook — *M* · deps: KG-RAG-01..14
 
 ---
 

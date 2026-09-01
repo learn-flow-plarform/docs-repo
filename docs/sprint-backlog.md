@@ -25,9 +25,10 @@ _Team: 3 developers_
 13. [F12 — UX & Frontend Quality (UX)](#13-f12--ux--frontend-quality-ux)
 14. [F13 — Observability & Disaster Recovery (OPS)](#14-f13--observability--disaster-recovery-ops)
 15. [F14 — Bloom Competency Engine (BLOOM)](#15-f14--bloom-competency-engine-bloom)
-16. [Dependency Graph](#16-dependency-graph)
-17. [Team Workload Projection](#17-team-workload-projection)
-18. [Shared Foundation](#18-shared-foundation)
+16. [F15 — Knowledge Graph & Graph RAG Infrastructure (KG-RAG)](#16-f15--knowledge-graph--graph-rag-infrastructure-kg-rag)
+17. [Dependency Graph](#17-dependency-graph)
+18. [Team Workload Projection](#18-team-workload-projection)
+19. [Shared Foundation](#19-shared-foundation)
 
 ---
 
@@ -1350,6 +1351,7 @@ As a Backend engineer, I want evaluation results persisted per session step so t
 **Acceptance Criteria:**
 - Each step's score + next question persisted to Mongo
 - `demonstratedBloomLevel` + `objectiveId` (when present) persisted per step — the raw feed for BLOOM-08 competency updates
+- **Future extension (KG-RAG-09):** evaluation results will also trigger student mastery updates in the knowledge graph (StudentMastery node)
 - Session state recoverable after service restart (removes the in-memory-only risk)
 - Idempotent by `correlationId`
 
@@ -1519,6 +1521,7 @@ As an AI engineer, I want search outputs validated so that answers always cite s
 - Reject answers with no sources
 - Reject outputs that echo injection payloads verbatim
 - One correction retry, then FAILED with sanitized reason
+- **Future extension (KG-RAG-11):** search will include course-material sources (from vector store) and knowledge graph subgraph results, tagged with source type
 
 ---
 
@@ -1715,6 +1718,7 @@ As an AI engineer, I want the ingestion worker to perform OCR/parsing/embedding 
 **Acceptance Criteria:**
 - `IngestionWorker` consumes `study.ingest.course` jobs
 - Pipeline: parse → normalize → enrich (LLM) → **extract concepts + draft learning objectives (BLOOM-04)** → chunk → embed → deduplicate → store in vector store
+- **Future extension (KG-RAG-02):** entity + relation extraction into Neo4j knowledge graph will be added as a parallel stage after enrich
 - Progress events emitted (parsing/enriching/embedding) for INGEST-07
 - Blocking work executed off the main event loop
 - ACK only after full pipeline completes
@@ -3052,6 +3056,7 @@ As a QA Engineer, I want one test where an AI job completes through RabbitMQ end
 - Trigger planner job via API → RabbitMQ → Python worker (mocked LLM) → result → UI shows plan
 - Same pattern verified for coach and search (can be parametrized)
 - Runs in CI with real RabbitMQ + MongoDB containers
+- **Future extension (KG-RAG-14):** Graph RAG E2E test will extend this to verify knowledge graph population and traversal-based retrieval through the full pipeline
 
 ---
 
@@ -4278,6 +4283,8 @@ As a QA Engineer, I want an end-to-end test proving material → objectives → 
 - Integration: ingest sample doc (LLM mocked) → objectives classified → eval steps update profile idempotently (duplicate replay = no double-count) → plan targets weakest
 - Playwright happy path: student sees updated radar after session; negative: no objectives extracted → plan still generates (degraded mode)
 - Estimator property tests wired into CI (bounds/monotonicity/decay)
+- **Future extension (KG-RAG-14):** Graph RAG E2E will extend this to verify knowledge graph population and prerequisite-aware plan generation
+- Estimator property tests wired into CI (bounds/monotonicity/decay)
 
 ---
 
@@ -4302,7 +4309,375 @@ As a team, I want a written technical/educational reference for the taxonomy mod
 
 ---
 
-## 16. Dependency Graph
+## 16. F15 — Knowledge Graph & Graph RAG Infrastructure (KG-RAG)
+
+> **Coverage scope:** Provides the foundational knowledge-graph layer, Graph RAG retrieval, and domain-specific sub-stores (Pedagogical KB, Misconception KB, Student Knowledge Graph) that extend the basic vector RAG introduced by F05/INGEST. Depends on AI-COM message contracts for ingestion events and F05/SEARCH vector-store patterns.
+
+**Must cover:**
+
+- Knowledge-graph schema (entities, relations, edge properties) stored in Neo4j
+- Entity + relation extraction pipeline (LLM-based) triggered during course ingestion
+- Graph RAG retrieval service (traversal-based, not flat kNN) exposing a shared client interface
+- Pedagogical Knowledge Base (concept hierarchy, prerequisite chains, Bloom verb maps)
+- Misconception Knowledge Base (common student misconceptions, corrective paths)
+- Student Knowledge Graph (per-user mastery state, prerequisite gaps, learning path graph)
+- Reference Answer Store (canonical answers per question, versioned)
+- Graph RAG adapters for Planner, Evaluator, Coach, and Search agents
+
+**Stories:**
+
+---
+
+#### KG-RAG-01 — Graph RAG Core Schema & Neo4j Setup
+
+**User Story:**
+As a platform architect, I want a defined knowledge-graph schema (Concept, Subtopic, Question, Misconception, Prerequisite, BloomLevel, StudentMastery nodes and edges) with Neo4j storage so that agents can traverse prerequisite chains, misconception paths, and mastery states.
+
+**Domain:** Infrastructure
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 8
+**Story Points:** 5
+**Day:** 1
+
+**Dependencies:** AI-COM-01
+
+**Acceptance Criteria:**
+- Neo4j schema DDL in `study-partner-ai/services/knowledge_graph/schema.cypher` with all required node labels and relationship types
+- Unique constraints on Concept.id, Subtopic.id, Question.id, Misconrection.id, Student.id
+- Index on Concept.name, Subtopic.name for fast lookup
+- Unit tests verifying schema creation and constraint enforcement
+- Integration tests: create sample graph, verify traversal queries (prerequisite chain, Bloom progression, misconception → corrective path)
+
+---
+
+#### KG-RAG-02 — Entity & Relation Extraction Pipeline
+
+**User Story:**
+As a course ingestion pipeline, I want an LLM-powered entity + relation extraction step that parses course content into knowledge-graph nodes and edges so that the graph is populated automatically during ingestion.
+
+**Domain:** Ingestion
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 10
+**Story Points:** 8
+**Day:** 2
+
+**Dependencies:** KG-RAG-01, INGEST-05
+
+**Acceptance Criteria:**
+- New module `study-partner-ai/services/knowledge_graph/extractor.py` exposing `extract_entities_relations(content: str) -> ExtractionResult`
+- Uses existing LiteLLM routing (config.yaml) for LLM calls; supports all configured models
+- Extracts: Concepts, Subtopics, Prerequisite relations, Bloom verb mappings per concept
+- Writes extracted entities to Neo4j via `kg_store.write_batch()`
+- Includes test fixtures: sample lecture transcript, sample textbook section → verify extracted entities and relations match expected graph structure
+- Graceful degradation: if extraction fails for a chunk, log warning and continue with remaining chunks (circuit breaker integration pattern from AI-COM-06)
+
+---
+
+#### KG-RAG-03 — Graph RAG Retrieval Service
+
+**User Story:**
+As any AI agent, I want a shared Graph RAG retrieval client that traverses the knowledge graph (following prerequisite chains, Bloom levels, and misconception links) and returns ranked subgraphs so that agents get contextually rich, relation-aware results rather than flat kNN hits.
+
+**Domain:** Shared Service
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 12
+**Story Points:** 8
+**Day:** 3
+
+**Dependencies:** KG-RAG-01, KG-RAG-02
+
+**Acceptance Criteria:**
+- `study-partner-ai/services/graph_rag/client.py` exposing `GraphRAGClient`
+- Core methods: `retrieve_by_concept(concept_id, max_depth, bloom_level)`, `retrieve_prerequisite_chain(concept_id)`, `retrieve_misconceptions(concept_id)`, `retrieve_similar_situations(student_id, concept_id)`
+- Traversal-based retrieval with configurable max_depth (default 3)
+- Returns structured `GraphRAGResult` with nodes, edges, confidence scores
+- Implements circuit breaker and retry logic (AI-COM-06 pattern)
+- Performance: <500ms for traversal queries up to depth 3 on test graph
+- Unit tests with mocked graph; integration tests against Neo4j with test data
+
+---
+
+#### KG-RAG-04 — Pedagogical Knowledge Base
+
+**User Story:**
+As the Evaluator and Coach agents, I want a curated Pedagogical Knowledge Base (concept hierarchy, prerequisite chains, Bloom verb maps, difficulty calibrations) stored in the knowledge graph so that I can reason about curriculum structure and student progression.
+
+**Domain:** Knowledge Base
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 8
+**Story Points:** 5
+**Day:** 3
+
+**Dependencies:** KG-RAG-01, BLOOM-01
+
+**Acceptance Criteria:**
+- Seed data import script `study-partner-ai/services/knowledge_graph/seeds/pedagogical_kb.py` with sample concept hierarchy (50+ concepts, 200+ prerequisite edges, Bloom level assignments)
+- Concept nodes include: id, name, domain, bloom_levels (list), difficulty_base
+- Prerequisite edges include: required_strength (0.0-1.0), is_hard_prerequisite (bool)
+- Bloom verb maps stored as node properties: BloomLevel → list of verbs
+- Graph traversal test: given concept X, retrieve full prerequisite chain with Bloom levels
+- Documented in `docs/knowledge-graph/pedagogical-kb.md`
+
+---
+
+#### KG-RAG-05 — Misconception Knowledge Base
+
+**User Story:**
+As the Evaluator agent, I want a Misconception Knowledge Base mapping common student misconceptions to corrective explanations and prerequisite gaps so that I can diagnose WHY a student got something wrong, not just WHAT they got wrong.
+
+**Domain:** Knowledge Base
+**Type:** Feature
+**Priority:** Medium
+**Estimated Hours:** 8
+**Story Points:** 5
+**Day:** 4
+
+**Dependencies:** KG-RAG-01, BLOOM-01
+
+**Acceptance Criteria:**
+- Misconception nodes in Neo4j: id, text, domain, severity (1-5), detected_via (list of question types)
+- Misconception → CorrectiveEdge → Concept (the concept the student needs to revisit)
+- Misconception → BloomGapEdge → BloomLevel (which cognitive level is missing)
+- Seed data: 30+ misconceptions across math, science, programming domains
+- Retrieval: given a student's wrong answer pattern, retrieve top-3 likely misconceptions with confidence scores
+- Unit tests: wrong answer → misconception mapping matches expected output
+
+---
+
+#### KG-RAG-06 — Reference Answer Store
+
+**User Story:**
+As the Evaluator agent, I want a versioned Reference Answer Store where canonical answers (with rubrics, partial-credit rules, and Bloom-level tags) are stored so that I can evaluate student responses against authoritative references.
+
+**Domain:** Knowledge Base
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 6
+**Story Points:** 5
+**Day:** 3
+
+**Dependencies:** INGEST-05, EVAL-02
+
+**Acceptance Criteria:**
+- `study-partner-ai/services/knowledge_graph/reference_answers.py` with CRUD operations
+- ReferenceAnswer node: id, question_id, canonical_text, rubric (JSON), bloom_level, version, created_at
+- Version history: each edit creates a new version, old versions retained
+- Retrieval: `get_reference_answer(question_id, version=None)` returns latest or specific version
+- Bulk import: CSV/JSON → batch insert for course-level answer keys
+- Integration tests: create reference → retrieve → update → verify versioning
+
+---
+
+#### KG-RAG-07 — Student Knowledge Graph & Mastery Tracing
+
+**User Story:**
+As the Coach and Scheduler agents, I want a per-student knowledge graph tracking mastery state across concepts and prerequisite gaps so that I can personalize learning paths and recommend next topics.
+
+**Domain:** Student Model
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 10
+**Story Points:** 8
+**Day:** 5
+
+**Dependencies:** KG-RAG-01, KG-RAG-03, BLOOM-02, F14-EST
+
+**Acceptance Criteria:**
+- StudentMastery node per student per concept: student_id, concept_id, mastery_score (0.0-1.0), last_assessed, bloom_level_achieved, prerequisite_gaps (list of concept_ids)
+- Mastery updates via event listener: when EVAL produces mastery_update event, update StudentMastery node and recompute prerequisite_gaps
+- `StudentKGClient` in `study-partner-ai/services/knowledge_graph/student_kg.py`
+- Methods: `get_student_mastery(student_id)`, `get_prerequisite_gaps(student_id, concept_id)`, `get_recommended_next(student_id)`
+- Recommended-next uses prerequisite chain traversal + mastery scores to suggest lowest-mastery, prerequisite-satisfied concepts
+- Integration test: student completes assessment → mastery updated → gaps computed → recommended-next returns correct concepts
+
+---
+
+#### KG-RAG-08 — Planner Agent Graph RAG Integration
+
+**User Story:**
+As the Planner agent, I want to use Graph RAG when generating study plans so that prerequisite chains are respected (student can't study Topic B before mastering prerequisite Topic A) and Bloom-level progression is followed.
+
+**Domain:** Planner
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 6
+**Story Points:** 5
+**Day:** 6
+
+**Dependencies:** KG-RAG-03, KG-RAG-07, PLAN-07
+
+**Acceptance Criteria:**
+- Planner agent calls `GraphRAGClient.retrieve_prerequisite_chain(concept_id)` before scheduling a concept
+- Plan generation respects prerequisite mastery: concept is only scheduled if all hard prerequisites have mastery_score >= 0.7
+- Bloom-level ordering enforced: lower-order concepts before higher-order within the same topic
+- Integration test: generate plan for a student with known gaps → plan includes remediation for prerequisite gaps before advancing
+- Graceful degradation: if KG is unavailable, fall back to flat RAG + warning log (no hard failure)
+
+---
+
+#### KG-RAG-09 — Evaluator Agent RAG Integration
+
+**User Story:**
+As the Evaluator agent, I want to use Graph RAG (Reference Answers + Misconception KB + Student KG) when grading responses so that I can provide diagnosis-level feedback, not just correct/incorrect.
+
+**Domain:** Evaluator
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 8
+**Story Points:** 5
+**Day:** 6
+
+**Dependencies:** KG-RAG-03, KG-RAG-05, KG-RAG-06, KG-RAG-07, EVAL-06
+
+**Acceptance Criteria:**
+- Evaluator retrieves reference answer via `ReferenceAnswerStore.get_reference_answer(question_id)` before grading
+- After grading, evaluator retrieves likely misconceptions via `GraphRAGClient.retrieve_misconceptions(concept_id)` if student answer is incorrect
+- Evaluation output includes: `diagnosis` (misconception_id, corrective_explanation, prerequisite_gap_concept_id)
+- Student Mastery updated: `StudentKGClient.update_mastery(student_id, concept_id, score, bloom_level_earned)`
+- Integration test: student answers incorrectly → evaluator returns misconception diagnosis + prerequisite gap → student mastery updated
+
+---
+
+#### KG-RAG-10 — Coach Agent RAG Integration
+
+**User Story:**
+As the Coach agent, I want to use Graph RAG (Student KG + Pedagogical KB + Misconception KB) when providing explanations so that I can tailor explanations to the student's specific gaps and misconceptions.
+
+**Domain:** Coach
+**Type:** Feature
+**Priority:** High
+**Estimated Hours:** 8
+**Story Points:** 5
+**Day:** 7
+
+**Dependencies:** KG-RAG-03, KG-RAG-07, COACH-09
+
+**Acceptance Criteria:**
+- Coach retrieves student mastery state and prerequisite gaps before generating explanation
+- Explanation adapts: if prerequisite gap detected, coach includes prerequisite review before the target concept
+- If misconception detected in evaluation, coach provides corrective explanation referencing the misconception KB
+- Coach history (past explanations, outcomes) stored for future similar-situation retrieval
+- Integration test: student has prerequisite gap → coach explanation includes prerequisite review; student has misconception → coach addresses it
+
+---
+
+#### KG-RAG-11 — Search Agent Personal Corpus RAG
+
+**User Story:**
+As the Search agent, I want to include the student's ingested course materials in search results so that searches are grounded in the student's actual curriculum, not generic knowledge.
+
+**Domain:** Search
+**Type:** Feature
+**Priority:** Medium
+**Estimated Hours:** 6
+**Story Points:** 3
+**Day:** 7
+
+**Dependencies:** KG-RAG-03, SEARCH-05, INGEST-05
+
+**Acceptance Criteria:**
+- Search agent's retrieval pipeline includes course-ingested documents (already in vector store) AND knowledge graph subgraph for the query concept
+- Hybrid retrieval: flat kNN (existing) + graph traversal (new) → merged and re-ranked results
+- Results tagged with source: "course-material" vs "reference" for transparency
+- Integration test: student queries a topic from their course → results include course-specific content + graph-linked prerequisites
+
+---
+
+#### KG-RAG-12 — Reflection Agent RAG
+
+**User Story:**
+As the Reflection agent, I want to retrieve past reflections, their outcomes, and correlated learning patterns so that I can generate richer insights and identify recurring themes.
+
+**Domain:** Reflection
+**Type:** Feature
+**Priority:** Medium
+**Estimated Hours:** 6
+**Story Points:** 3
+**Day:** 8
+
+**Dependencies:** KG-RAG-03, REFLECTION-02
+
+**Acceptance Criteria:**
+- Reflection agent stores each reflection summary in vector store with student_id, session_id, themes, mood tags
+- New retrieval: `ReflectionRAGClient.retrieve_similar_reflections(student_id, themes, k=5)`
+- Past reflections surfaced to the reflection prompt as context
+- Outcome correlation: if reflection theme X was addressed, track whether subsequent session performance improved
+- Integration test: generate reflection → store → generate second reflection → verify first is surfaced as context
+
+---
+
+#### KG-RAG-13 — Graph RAG Observability & Monitoring
+
+**User Story:**
+As an SRE, I want observability hooks on all Graph RAG retrieval calls (traversal depth, latency, hit rate, fallback usage) so that I can monitor performance and detect degradation.
+
+**Domain:** Observability
+**Type:** Feature
+**Priority:** Medium
+**Estimated Hours:** 4
+**Story Points:** 3
+**Day:** 8
+
+**Dependencies:** KG-RAG-03, OPS-01
+
+**Acceptance Criteria:**
+- All GraphRAGClient methods emit structured logs: concept_id, traversal_depth, latency_ms, result_count, fallback_used
+- Prometheus metrics: `graph_rag_traversal_latency_seconds`, `graph_rag_hit_count`, `graph_rag_fallback_total`
+- Dashboard panel in Grafana showing Graph RAG health
+- Alert: fallback rate > 20% over 5 minutes triggers warning
+
+---
+
+#### KG-RAG-14 — Graph RAG Integration Tests & Load Test
+
+**User Story:**
+As a QA engineer, I want end-to-end integration tests and a load test for the full Graph RAG pipeline (extraction → graph population → retrieval → agent integration) so that we verify correctness and performance under realistic conditions.
+
+**Domain:** Testing
+**Type:** Feature
+**Priority:** Medium
+**Estimated Hours:** 6
+**Story Points:** 5
+**Day:** 9
+
+**Dependencies:** KG-RAG-08, KG-RAG-09, KG-RAG-10, TEST-01
+
+**Acceptance Criteria:**
+- Integration test: ingest course content → extraction populates graph → student answers question → evaluator uses graph RAG → coach uses graph RAG → verify full pipeline
+- Load test: 100 concurrent retrieval requests, p95 latency < 1s
+- Regression test: graph RAG fallback does not break existing flat RAG behavior
+- CI wiring: tests run on every PR touching `services/knowledge_graph/` or `services/graph_rag/`
+
+---
+
+#### KG-RAG-15 — Documentation & Runbook
+
+**User Story:**
+As a team member, I want comprehensive documentation for the Knowledge Graph & Graph RAG system so that onboarding and debugging are efficient.
+
+**Domain:** Docs
+**Type:** Documentation
+**Priority:** Medium
+**Estimated Hours:** 4
+**Story Points:** 3
+**Day:** 9
+
+**Dependencies:** KG-RAG-01 through KG-RAG-14
+
+**Acceptance Criteria:**
+- `docs/knowledge-graph/architecture.md`: system overview, schema diagram, data flow
+- `docs/knowledge-graph/agent-integration.md`: how each agent uses Graph RAG, with code examples
+- `docs/knowledge-graph/troubleshooting.md`: common failures, fallback behavior, debugging steps
+- `docs/knowledge-graph/performance.md`: tuning guide for traversal depth, index optimization
+- Runbook: how to seed new domain data, how to add new misconception types, how to extend schema
+
+---
+
+## 17. Dependency Graph
 
 ```
 SHARED FOUNDATION
@@ -4355,6 +4730,24 @@ SHARED FOUNDATION
    ├ BLOOM-11 ◄── BLOOM-09
    └ BLOOM-12 ◄── BLOOM-10/11
 
+   KNOWLEDGE GRAPH & GRAPH RAG (F15 — extends F02/F03/F04/F05 with graph traversal)
+   F15 — Knowledge Graph & Graph RAG Infrastructure
+   ├ KG-RAG-01 (schema) ◄── AI-COM-01
+   ├ KG-RAG-02 (extraction) ◄── KG-RAG-01 + INGEST-05
+   ├ KG-RAG-03 (retrieval) ◄── KG-RAG-01 + KG-RAG-02
+   ├ KG-RAG-04 (pedagogical KB) ◄── KG-RAG-01 + BLOOM-01
+   ├ KG-RAG-05 (misconception KB) ◄── KG-RAG-01 + BLOOM-01
+   ├ KG-RAG-06 (reference answers) ◄── INGEST-05 + EVAL-02
+   ├ KG-RAG-07 (student KG) ◄── KG-RAG-03 + BLOOM-02 + F14-EST
+   ├ KG-RAG-08 (Planner integration) ◄── KG-RAG-03 + KG-RAG-07 + PLAN-07
+   ├ KG-RAG-09 (Evaluator integration) ◄── KG-RAG-03/05/06/07 + EVAL-06
+   ├ KG-RAG-10 (Coach integration) ◄── KG-RAG-03 + KG-RAG-07 + COACH-09
+   ├ KG-RAG-11 (Search integration) ◄── KG-RAG-03 + SEARCH-05 + INGEST-05
+   ├ KG-RAG-12 (Reflection RAG) ◄── KG-RAG-03 + REFLECTION-02
+   ├ KG-RAG-13 (observability) ◄── KG-RAG-03 + OPS-01
+   ├ KG-RAG-14 (E2E + load tests) ◄── KG-RAG-08..10 + TEST-01
+   └ KG-RAG-15 (docs) ◄── KG-RAG-01..14
+
    RELIABILITY & SCALABILITY (parallel, independent)
    F07 Study       F08 Gamification   F09 Analytics/Performance
    ├ STUDY-01..02 (async)  ├ GAME-01..02 ◄─ AI-COM-02 pattern  ├ PERF-01..04 (indexes)
@@ -4404,7 +4797,7 @@ SHARED FOUNDATION
 
 ---
 
-## 17. Team Workload Projection
+## 18. Team Workload Projection
 
 ### Assumptions
 
@@ -4472,9 +4865,18 @@ The Bloom Competency Engine (~44 h, 13 stories) was added after the v1.0 scope w
 - **Alternative:** BLOOM-01/02/DOC (contracts, zero deps) slot into spare capacity immediately; BLOOM-10/11 are Medium priority and deferrable to post-MVP if Sprint 6 slips
 - The loop closes back into F02: BLOOM-10 makes "personalized plan" measurable — do not market personalization until it ships
 
+### F15 insertion (added v1.2)
+
+The Knowledge Graph & Graph RAG Infrastructure (~100 h, 15 stories) was added to cover advanced retrieval needs identified across all AI agents. Scheduling options:
+
+- **Recommended: Sprint 7** — KG-RAG depends on F05/INGEST (Sprint 3) for entity extraction triggers, BLOOM (Sprint 6) for mastery data, and EVAL (Sprint 2) for reference answers
+- **Early start:** KG-RAG-01 (schema) and KG-RAG-04/05 (Pedagogical KB, Misconception KB) can start in Sprint 6 alongside BLOOM since they share Bloom data
+- **Critical path:** KG-RAG-01 → KG-RAG-02 → KG-RAG-03 → KG-RAG-08/09/10 (agent integrations) → KG-RAG-14 (E2E tests)
+- The Graph RAG layer is the single most impactful capability upgrade: it transforms flat kNN retrieval into relation-aware subgraph retrieval for Planner, Evaluator, Coach, and Search agents
+
 ---
 
-## 18. Shared Foundation
+## 19. Shared Foundation
 
 The RabbitMQ AI job infrastructure (F01) is the single most important shared artifact. Every AI feature depends on it.
 
@@ -4503,6 +4905,9 @@ The RabbitMQ AI job infrastructure (F01) is the single most important shared art
 | `security/url_guard.py` | SEARCH-03 SSRF protection | search agent |
 | `db/client.py` | shared async Mongo client | all agents |
 | `vector/embedder.py` | shared SentenceTransformer singleton | planner + ingestion |
+| `knowledge_graph/schema.py` | KG-RAG-01 graph schema definitions | knowledge graph, all agents |
+| `knowledge_graph/extractor.py` | KG-RAG-02 entity/relation extraction | ingestion pipeline |
+| `graph_rag/client.py` | KG-RAG-03 shared Graph RAG client | planner, evaluator, coach, search, reflection |
 
 ### Sequencing rules
 
@@ -4512,6 +4917,7 @@ The RabbitMQ AI job infrastructure (F01) is the single most important shared art
 4. **INFRA-01..03 before any deploy** — security scans must block
 5. **OPS-11..14 before real data** — backups must be recoverable
 6. **F12 (UX) after stability** — only after F02/F07 are solid
+7. **F15 (KG-RAG) after F05 + F14** — Graph RAG needs course ingestion data and Bloom competency data; early schema work (KG-RAG-01, KG-RAG-04/05) can start in Sprint 6
 
 ---
 
