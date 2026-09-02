@@ -4218,6 +4218,8 @@ As a Platform engineer, I want competency profiles updated idempotently from eva
 - Atomic per-key update (`findOneAndUpdate` on the compound key), no read-modify-write races
 - Evidence entries appended capped (keep last N=20 per key)
 
+✅ done — PR #14 (https://github.com/study-partner-esprit/study-partner-api/pull/14) on branch `feature/bloom-08-profile-updater`, targeting `bloom`. EvalResult enriched with `userId` (from the authenticated ai.results envelope — the only trusted identity source) in `EvalResult` model / `evalResultBuilder` / `evalResultStore`, enabling the competency key. Study service gained a read-only `EvalResultRecord` model mapped to `eval_results`, a `CompetencyProcessing` idempotency claim store (`competency_processing`, unique `correlationId`), and `services/study/src/services/competencyUpdater.js`: `claimResult` (duplicate-key ⇒ ACK-skip), `resolveCompetencyKey` (objectiveId → LearningObjective → topicId + knowledgeType), `processEvalResult` (claim → resolve → build evidence item → `upsertProfile`), and `runOnce` single poll cycle. `startCompetencyUpdater()` interval poller (default 5s, `COMPETENCY_POLL_INTERVAL_MS`) wired into `server.js` after DB connect with graceful SIGTERM stop. Updates only run when `demonstratedBloomLevel` present; evidence capped by BLOOM-07's N=20. 16 updater tests + 10 eval-result tests; full study-service suite 67/67 pass, prettier clean.
+
 ---
 
 #### BLOOM-09 — Competency API
