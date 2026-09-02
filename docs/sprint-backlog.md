@@ -4194,6 +4194,8 @@ As an AI engineer, I want a per-student competency profile keyed by (topic × kn
 - Property-based unit tests: bounds, monotonicity under consistent evidence, convergence, decay
 - Aggregation endpoint-ready: subject-level rollup computed from topic-level rows (topic granularity is the source of truth)
 
+✅ done — PR #11 (https://github.com/study-partner-esprit/study-partner-api/pull/11) on branch `feature/bloom-07-competency-profile`, targeting `bloom`. New `CompetencyProfile` model in `services/study/src/models/index.js` persisted under `competency_profiles` collection. Indexes: `(userId, topicId)` compound, unique `(userId, topicId, knowledgeType, bloomLevel)`. Evidence array capped at N=20. EWMA estimator in new `services/study/src/services/competency.js`: seeded at 0.5 (EVAL's `last_valid_score` default), α=0.4, max_step=0.12 clamp, bounded [0,1]. `replayEvidence` sorts by evaluatedAt, replays from seed, null masteryScore filtered; `rollupByTopics` for subject-level aggregation. 21 property-based tests covering bounds, monotonicity, convergence, recency decay, no cross-level inference, idempotency, edge cases. Full study-service suite 49/49 pass, prettier clean.
+
 ---
 
 #### BLOOM-08 — Profile Updater (result-event consumer)
