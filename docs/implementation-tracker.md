@@ -285,7 +285,7 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 - [x] **EVAL-05** Evidence grounding per dimension score — *H* · deps: EVAL-03
 - [x] **EVAL-06** Validation/rejection pipeline — *H* · deps: EVAL-04
 - [x] **EVAL-07** Retry-safe session state — *H* · deps: AI-COM-06
-- [x] **EVAL-08** Step results persisted to Mongo — *H* · deps: AI-COM-07
+- [x] **EVAL-08** Step results persisted to Mongo — *H* · deps: AI-COM-07 ✅ Node PR#13 (`eval_results` + EvalResult) merged to `bloom`; Python PR#28 (full EVAL side) merged to `bloom`
 - [x] **EVAL-09** Eval API → 202 jobId — *H* · deps: EVAL-08
 - [x] **EVAL-10** Evaluator E2E — *H* · deps: EVAL-09
 
