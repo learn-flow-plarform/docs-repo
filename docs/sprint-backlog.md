@@ -4290,6 +4290,8 @@ As a User, I want a visual competency radar per subject showing my six Bloom lev
 - Empty state explains the model briefly (link to help article)
 - Loading/error states per UX conventions; axe accessibility checks pass
 
+✅ done — Web PR #5 (https://github.com/study-partner-esprit/study-partner-web/pull/5) on branch `feature/bloom-11-competency-map`, targeting `main` (this repo has no `bloom` branch; web work goes to `main`). **Competency Map page** at `/competency` (`requireStudent`): per-subject six-axis **Bloom radar** (Remember/Understand/Apply/Analyze/Evaluate/Create) averaging topic scores, a subject tab switcher, drill-down to a per-topic score list, and a **topic detail panel** (per-knowledge-type rows, scores, evidence excerpts). The internal `needsReview` signal is intentionally **not shown to students** (BLOOM-09 instructor-only convention). **Task level badges:** `PlanTaskBadge` on plan tasks renders `targetBloomLevel` (+ `objectiveId` tooltip) from the BLOOM-10 planner output with humanized labels (`analyze` → `Analyze`) and graceful degradation when absent. **API client:** `competencyAPI.getCompetencyMap` / `getTopicDetail` → `GET /api/v1/competencies[/topics/:topicId]`. **Accessibility:** added **jest-axe**, registered `expect(...).toHaveNoViolations()` in `setupTests.js`; axe tests cover the loaded map + badge. Empty state explains the Bloom model; loading spinner + retryable error state. Tests: 11 new tests in `CompetencyMap.test.jsx` + `PlanTaskBadge.test.jsx` (radar/topic load, drill-down, close, empty, error/retry, badge mapping, axe); touched suites 15/15 green, `vite build` passes, ESLint/Prettier clean (only pre-existing warnings remain in `Sidebar.jsx`/`Tasks.jsx`/`api.js`).
+
 ---
 
 #### BLOOM-12 — E2E Validation

@@ -27,7 +27,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F11 Infrastructure & Deploy | 13 | 0 | 0 | ⬜ |
 | F12 UX & Frontend | 12 | 0 | 0 | ⬜ |
 | F13 Observability & DR | 16 | 1 | 0 | 🔄 |
-| F14 Bloom Competency Engine | 13 | 10 | 0 | 🔄 BLOOM-01..10 done — contracts, extraction, classification, persistence + estimator + profile updater + read API + planner weakest-first targeting shipping |
+| F14 Bloom Competency Engine | 13 | 11 | 0 | 🔄 BLOOM-01..11 done — contracts, extraction, classification, persistence + estimator + profile updater + read API + planner weakest-first targeting + frontend competency map shipping |
 | F15 Knowledge Graph & Graph RAG | 15 | 0 | 0 | ⬜ Added v1.2 — schema startable in Sprint 6 |
 
 ---
@@ -464,7 +464,7 @@ Two-dimensional revised taxonomy (Anderson & Krathwohl 2001): 6 cognitive levels
 - [x] **BLOOM-08** Profile updater on eval result events, idempotent by correlationId, atomic per-key updates — *H* · deps: BLOOM-07, EVAL-08 ✅ PR#14 open at `f00fb14` — EvalResult userId enrichment + study-side poller with ACK-skip idempotency + upsertProfile call
 - [x] **BLOOM-09** `GET /api/v1/competencies` (+ topic detail), subject rollup from topic rows — *H* · deps: BLOOM-08 ✅ PR#15 open at `0b47c3b` — subject→topic→level map + topic detail with evidence & needsReview
 - [x] **BLOOM-10** Planner weakest-first targeting + progression gate (N−1 ≥ 0.7); tasks carry objectiveId/targetLevel — *M* · deps: BLOOM-09, PLAN-06 ✅ Python PR#29 open at `46083b3` (weak comps threaded through PlannerInput, progress-gated `unlocked_levels`, LLM targets tasks at highest unlocked weak level) · Node PR#16 open at `57dcc15` (stacked on BLOOM-09 — `getWeakCompetenciesForCourse` weakest-first payload into `study.plan.generate`, persist `objectiveId`/`targetBloomLevel` on tasks + taskGraph)
-- [ ] **BLOOM-11** Frontend competency radar + task level badges — *M* · deps: BLOOM-09
+- [x] **BLOOM-11** Frontend competency radar + task level badges — *M* · deps: BLOOM-09 ✅ Web PR#5 open at `19e7a1f` on `main` (`feature/bloom-11-competency-map` — Competency Map page at `/competency` with per-subject 6-axis radar + topic drill-down + detail panel; `PlanTaskBadge` target-level badges on plan tasks; `competencyAPI` client; jest-axe a11y tests; empty/loading/error states)
 - [ ] **BLOOM-12** E2E: ingest→objectives→eval→profile→plan loop; idempotency replay test; parity in CI — *H* · deps: BLOOM-10/11
 - [ ] **BLOOM-DOC** `docs/education/bloom-taxonomy.md` (2001 revision, both dimensions, estimator math, anti-patterns) — *M* · deps: BLOOM-01
 
