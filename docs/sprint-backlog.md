@@ -4169,6 +4169,8 @@ As a Backend engineer, I want objectives persisted with indexes and document ver
 - Re-ingestion of a document supersedes (version bump) rather than duplicating objectives
 - TTL-free: objectives live until superseded or topic deleted
 
+✅ done — API `feature/bloom-06-learning-objective-persistence`@bdd0391 (PR #10, targeting `bloom`, unmerged). New `LearningObjective` model in `services/study/src/models/index.js` persisted under collection `learning_objectives` with indexes `(topicId, bloomLevel)`, `documentId`, and a unique key. **Design decision:** the AC's unique `(topicId, textHash)` is scoped per-document to `unique (documentId, topicId, textHash)` — the AI extractor collapses all subtopics to `topicId=topic_1` for every course, so a global unique key would collide when two users upload the same objective text (e.g. two "Linear Algebra" courses). New `services/study/src/services/objectives.js` syncs on ing (bulk upsert, version bump via `$inc`, supersede removed objectives) and hard-deletes on course deletion (TTL-free). `routes/courses.js` now carries `learning_objectives` through the AI→schema transform on both create and re-process. Mocks extended in `study.test.js`; 12 new service tests in `objectives.test.js`. Verification: full study-service suite 28/28 pass, prettier clean.
+
 ---
 
 #### BLOOM-07 — CompetencyProfile Model & Estimator
