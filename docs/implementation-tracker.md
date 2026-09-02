@@ -27,7 +27,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F11 Infrastructure & Deploy | 13 | 0 | 0 | ⬜ |
 | F12 UX & Frontend | 12 | 0 | 0 | ⬜ |
 | F13 Observability & DR | 16 | 1 | 0 | 🔄 |
-| F14 Bloom Competency Engine | 13 | 8 | 0 | 🔄 BLOOM-01..08 done — contracts, extraction, classification, persistence + estimator + profile updater shipping |
+| F14 Bloom Competency Engine | 13 | 9 | 0 | 🔄 BLOOM-01..09 done — contracts, extraction, classification, persistence + estimator + profile updater + read API shipping |
 | F15 Knowledge Graph & Graph RAG | 15 | 0 | 0 | ⬜ Added v1.2 — schema startable in Sprint 6 |
 
 ---
@@ -462,7 +462,7 @@ Two-dimensional revised taxonomy (Anderson & Krathwohl 2001): 6 cognitive levels
 - [x] **BLOOM-06** `learning_objectives` collection + indexes + versioned re-ingestion — *H* · deps: BLOOM-05
 - [x] **BLOOM-07** `CompetencyProfile` model + evidence-weighted EWMA estimator (bounds/monotonicity property tests; no cross-level inference) — *C* · deps: BLOOM-02, AI-COM-07 ✅ PR#11 merged at `1c974f9`
 - [x] **BLOOM-08** Profile updater on eval result events, idempotent by correlationId, atomic per-key updates — *H* · deps: BLOOM-07, EVAL-08 ✅ PR#14 open at `f00fb14` — EvalResult userId enrichment + study-side poller with ACK-skip idempotency + upsertProfile call
-- [ ] **BLOOM-09** `GET /api/v1/competencies` (+ topic detail), subject rollup from topic rows — *H* · deps: BLOOM-08
+- [x] **BLOOM-09** `GET /api/v1/competencies` (+ topic detail), subject rollup from topic rows — *H* · deps: BLOOM-08 ✅ PR#15 open at `0b47c3b` — subject→topic→level map + topic detail with evidence & needsReview
 - [ ] **BLOOM-10** Planner weakest-first targeting + progression gate (N−1 ≥ 0.7); tasks carry objectiveId/targetLevel — *M* · deps: BLOOM-09, PLAN-06
 - [ ] **BLOOM-11** Frontend competency radar + task level badges — *M* · deps: BLOOM-09
 - [ ] **BLOOM-12** E2E: ingest→objectives→eval→profile→plan loop; idempotency replay test; parity in CI — *H* · deps: BLOOM-10/11

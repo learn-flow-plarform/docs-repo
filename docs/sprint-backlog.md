@@ -4242,6 +4242,8 @@ As a Frontend engineer, I want endpoints returning the student's cognitive compe
 - Auth-scoped: userId always from token; caching headers/Redis per PERF patterns (short TTL)
 - OpenAPI/schema documented; pagination not required (bounded per user)
 
+✅ done — PR #15 (https://github.com/study-partner-esprit/study-partner-api/pull/15) on branch `feature/bloom-09-competency-api`, targeting `bloom`. New `services/study/src/services/competencyQueries.js`: `buildTopicIndex` joins competency `topicId` (a course-tree subtopic `id`) back to its subject by flattening the user's course topic trees; `getUserCompetencyMap` groups `CompetencyProfile` rows subject → topic → ordered Bloom levels with optional `subjectId` filter + `?knowledgeType=breakdown`; `getTopicDetail` returns per-level competencies with evidence excerpts (last 5) and an internal `needsReview` (confidence below `NEEDS_REVIEW_MIN_CONFIDENCE=0.4`, instructor-only, distinct from BLOOM-05's objective-level flag). `routes/competencies.js` exposes auth-scoped `GET /api/v1/competencies` and `GET /api/v1/competencies/topics/:topicId` (404 when no data), mounted in `app.js` at `/api/v1/competencies`, with short-TTL private `Cache-Control` headers (PERF). Bounded per user, pagination N/A per AC. 12 tests (route layer + aggregation units); full study suite passes, prettier clean.
+
 ---
 
 #### BLOOM-10 — Planner Integration (weakest-first targeting)
