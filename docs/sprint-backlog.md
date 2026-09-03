@@ -1218,10 +1218,10 @@ As an AI engineer, I want evaluation requests to optionally target a learning ob
 **Dependencies:** EVAL-02, F14/BLOOM (learning objectives)
 
 **Acceptance Criteria:**
-- `EvaluationRequest` carries optional `objectiveId`
-- When present, the objective's `bloomLevel` + `knowledgeType` (F14 model) are loaded server-side and carried as evaluation context
-- Session targets the objective's Bloom level for question depth and demonstrates the resulting level on mastery
-- `objectiveId`/`targetBloomLevel` join the persisted step result for BLOOM-08 competency updates
+- [x] `EvaluationRequest` carries optional `objectiveId`
+- [x] When present, the objective's `bloomLevel` + `knowledgeType` (F14 model) are loaded server-side and carried as evaluation context
+- [x] Session targets the objective's Bloom level for question depth and demonstrates the resulting level on mastery
+- [x] `objectiveId`/`targetBloomLevel` join the persisted step result for BLOOM-08 competency updates
 
 ---
 

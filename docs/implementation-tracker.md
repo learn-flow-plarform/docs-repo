@@ -27,7 +27,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F11 Infrastructure & Deploy | 13 | 0 | 0 | ⬜ |
 | F12 UX & Frontend | 12 | 0 | 0 | ⬜ |
 | F13 Observability & DR | 16 | 1 | 0 | 🔄 |
-| F14 Bloom Competency Engine | 13 | 11 | 0 | 🔄 BLOOM-01..11 done — contracts, extraction, classification, persistence + estimator + profile updater + read API + planner weakest-first targeting + frontend competency map shipping |
+| F14 Bloom Competency Engine | 13 | 12 | 0 | 🔄 BLOOM-01..11 done — contracts, extraction, classification, persistence + estimator + profile updater + read API + planner weakest-first targeting + frontend competency map shipping |
 | F15 Knowledge Graph & Graph RAG | 15 | 0 | 0 | ⬜ Added v1.2 — schema startable in Sprint 6 |
 
 ---
@@ -279,7 +279,7 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 
 - [x] **EVAL-01** EvaluatorWorker consumes `study.eval.step` — *H* · deps: AI-COM-05
 - [x] **EVAL-02** EvaluationRequest contract + state rehydration — *H* · deps: AI-COM-02
-- [ ] **EVAL-02b** Evaluation objective targeting (objectiveId → bloomLevel/knowledgeType) — *M* · deps: EVAL-02, F14/BLOOM
+- [x] **EVAL-02b** Evaluation objective targeting (objectiveId → bloomLevel/knowledgeType) — *M* · deps: EVAL-02, F14/BLOOM
 - [x] **EVAL-03** Prompt hardening (student_answer untrusted) — *C* · deps: EVAL-01
 - [x] **EVAL-04** EvaluationOutput schema (5 dims + mastery) — *H* · deps: EVAL-01
 - [x] **EVAL-05** Evidence grounding per dimension score — *H* · deps: EVAL-03
