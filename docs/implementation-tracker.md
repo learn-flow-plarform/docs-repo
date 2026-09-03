@@ -18,7 +18,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
 | F03 AI Coach | 17 | 16 | 0 | 🔄 |
 | F04 AI Evaluator | 11 | 10 | 0 | 🔄 |
-| F05 Search & Ingestion | 18 | 0 | 0 | ⬜ Blocked by F01 |
+| F05 Search & Ingestion | 18 | 8 | 0 | 🔄 SEARCH-01..08 done — INGEST-01..10 remaining |
 | F06 Auth & Security | 12 | 1 | 1 | 🔄 |
 | F07 Study Reliability | 11 | 2 | 0 | 🔄 |
 | F08 Gamification Events | 10 | 0 | 0 | ⬜ |
@@ -292,14 +292,14 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 ## F05 — AI Search & Ingestion (Sprint 2–3)
 
 ### SEARCH
-- [ ] **SEARCH-01** SearchWorker consumes `study.search.query` — *H* · deps: AI-COM-05
-- [ ] **SEARCH-02** Query validation + rate limit (10/min/user) — *H* · deps: AI-COM-02
-- [ ] **SEARCH-03** Scraped-content isolation + SSRF guard — *C* · deps: SEARCH-01
-- [ ] **SEARCH-04** SearchOutput schema (answer/sources) — *H* · deps: SEARCH-01
-- [ ] **SEARCH-05** Result validation (sources required) — *H* · deps: SEARCH-04
-- [ ] **SEARCH-06** Retry + Redis result cache (TTL 1h) — *H* · deps: AI-COM-06
-- [ ] **SEARCH-07** Search API → 202 jobId — *H* · deps: SEARCH-05
-- [ ] **SEARCH-08** Search E2E — *H* · deps: SEARCH-07
+- [x] **SEARCH-01** SearchWorker consumes `study.search.query` — *H* · deps: AI-COM-05
+- [x] **SEARCH-02** Query validation + rate limit (10/min/user) — *H* · deps: AI-COM-02
+- [x] **SEARCH-03** Scraped-content isolation + SSRF guard — *C* · deps: SEARCH-01
+- [x] **SEARCH-04** SearchOutput schema (answer/sources) — *H* · deps: SEARCH-01
+- [x] **SEARCH-05** Result validation (sources required) — *H* · deps: SEARCH-04
+- [x] **SEARCH-06** Retry + Redis result cache (TTL 1h) — *H* · deps: AI-COM-06
+- [x] **SEARCH-07** Search API → 202 jobId — *H* · deps: SEARCH-05
+- [x] **SEARCH-08** Search E2E — *H* · deps: SEARCH-07
 
 ### INGEST
 - [ ] **INGEST-01** Upload validation: MIME + magic bytes — *C* · deps: AI-COM-02
