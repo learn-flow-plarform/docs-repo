@@ -27,7 +27,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F11 Infrastructure & Deploy | 13 | 0 | 0 | ⬜ |
 | F12 UX & Frontend | 12 | 0 | 0 | ⬜ |
 | F13 Observability & DR | 16 | 1 | 0 | 🔄 |
-| F14 Bloom Competency Engine | 13 | 13 | 0 | 🔄 BLOOM-01..11 done — contracts, extraction, classification, persistence + estimator + profile updater + read API + planner weakest-first targeting + frontend competency map shipping |
+| F14 Bloom Competency Engine | 14 | 14 | 0 | 🔄 BLOOM-01..12 done — contracts, extraction, classification, persistence + estimator + profile updater + read API + planner weakest-first targeting + frontend competency map + E2E validation loop |
 | F15 Knowledge Graph & Graph RAG | 15 | 0 | 0 | ⬜ Added v1.2 — schema startable in Sprint 6 |
 
 ---
@@ -465,7 +465,7 @@ Two-dimensional revised taxonomy (Anderson & Krathwohl 2001): 6 cognitive levels
 - [x] **BLOOM-09** `GET /api/v1/competencies` (+ topic detail), subject rollup from topic rows — *H* · deps: BLOOM-08 ✅ PR#15 open at `0b47c3b` — subject→topic→level map + topic detail with evidence & needsReview
 - [x] **BLOOM-10** Planner weakest-first targeting + progression gate (N−1 ≥ 0.7); tasks carry objectiveId/targetLevel — *M* · deps: BLOOM-09, PLAN-06 ✅ Python PR#29 open at `46083b3` (weak comps threaded through PlannerInput, progress-gated `unlocked_levels`, LLM targets tasks at highest unlocked weak level) · Node PR#16 open at `e483b2e` (rebased onto `bloom` after BLOOM-08/09 merged — `getWeakCompetenciesForCourse` weakest-first payload into `study.plan.generate`, persist `objectiveId`/`targetBloomLevel` on tasks + taskGraph; MERGEABLE clean)
 - [x] **BLOOM-11** Frontend competency radar + task level badges — *M* · deps: BLOOM-09 ✅ Web PR#5 open at `19e7a1f` on `main` (`feature/bloom-11-competency-map` — Competency Map page at `/competency` with per-subject 6-axis radar + topic drill-down + detail panel; `PlanTaskBadge` target-level badges on plan tasks; `competencyAPI` client; jest-axe a11y tests; empty/loading/error states)
-- [ ] **BLOOM-12** E2E: ingest→objectives→eval→profile→plan loop; idempotency replay test; parity in CI — *H* · deps: BLOOM-10/11
+- [x] **BLOOM-12** E2E: ingest→objectives→eval→profile→plan loop; idempotency replay test; parity in CI — *H* · deps: BLOOM-10/11 ✅ Node PR at `760152f` on `bloom` (bloom-loop.integration.test.js — real Mongo loop: classify objectives → processEvalResult EWMA → getWeakCompetenciesForCourse + degraded mode, 5/5 passing) · Web PR#5 at `de5f6a3` on `feature/bloom-11-competency-map` (competency-e2e.spec.js — Playwright happy path, empty state, failed-fetch retry, 3/3 passing)
 - [x] **BLOOM-DOC** `docs/education/bloom-taxonomy.md` (2001 revision, both dimensions, estimator math, anti-patterns) — *M* · deps: BLOOM-01
 
 ---

@@ -4316,6 +4316,8 @@ As a QA Engineer, I want an end-to-end test proving material → objectives → 
 - **Future extension (KG-RAG-14):** Graph RAG E2E will extend this to verify knowledge graph population and prerequisite-aware plan generation
 - Estimator property tests wired into CI (bounds/monotonicity/decay)
 
+✅ done — Node PR at `760152f` on `bloom` (bloom-loop.integration.test.js: real-Mongo loop test — classify objectives via syncObjectivesForDocument, processEvalResult EWMA, getWeakCompetenciesForCourse + degraded mode; idempotency replay skips duplicate; 5/5 passing). Web PR#5 at `de5f6a3` on `feature/bloom-11-competency-map` (competency-e2e.spec.js: Playwright happy path (map renders + topic drill-down with scored rows), empty map state, failed-fetch error with retry; 3/3 passing). Contract parity tests and estimator property tests already merged from EVAL-02b.
+
 ---
 
 #### BLOOM-DOC — Educational Reference Document
