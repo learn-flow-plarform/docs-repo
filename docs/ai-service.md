@@ -2,7 +2,7 @@
 
 Setup, configuration, and day-to-day commands for the Python AI service
 (multi-agent, RabbitMQ job bus, shared LiteLLM client). Consumed through the
-API's AI Orchestrator (`:3004`); see [Backend API](backend-api.md).
+API's AI integration module (inside the single API on port 3000); see [Backend API](backend-api.md).
 
 ## Prerequisites
 

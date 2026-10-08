@@ -72,14 +72,17 @@ VITE_BYPASS_TASK_TIMING_GATE=false   # dev only, matches backend BYPASS_TASK_TIM
 
 | Command | Purpose |
 |---------|---------|
-| `npm start` / `npm run dev` | Vite dev server (`:5173`) |
-| `npm run build` / `npm run preview` | Production build / preview |
-| `npm test`, `npm run test:unit`, `npm run test:integration` | vitest |
-| `npm run test:smoke` | Playwright e2e |
-| `npm run lint` / `npm run format( check)` | ESLint / Prettier |
+| `pnpm start` / `pnpm dev` | Vite dev server (`:5173`) |
+| `pnpm build` / `pnpm preview` | Production build / preview |
+| `pnpm test`, `pnpm test:unit`, `pnpm test:integration` | vitest |
+| `pnpm test:smoke` | Playwright e2e |
+| `pnpm lint` / `pnpm format( check)` | ESLint / Prettier |
 
 ## Deployment
 
 Dockerfile + `nginx.conf` serve the built app; the Vite proxy approach means
 `VITE_API_URL` stays empty and nginx routes `/api` + `/ws` to the API Gateway
 (`:3000`). Also configured for Vercel (`vercel.json`).
+## Authentication migration (2026-10-08)
+
+Authentication is now owned by Better Auth hosted in Next.js. NestJS owns the backend listener, verifies HTTP-only sessions and enforces application authorization before dispatching domain modules. MongoDB stores new auth collections beside preserved domain users/profile data. Custom JWT/refresh flows are retired; see the root AUTH_MIGRATION_ANALYSIS.md and AUTH_MIGRATION.md for the current endpoint map, setup, migration and validation. Python AI remains independent.

@@ -6,7 +6,7 @@ _Update the status column as stories are completed. Do not reorder IDs._
 **Legend:** `[x]` Done · `[~]` In progress · `[ ]` Not started
 **Priority:** C = Critical (audit P0) · H = High (P1) · M = Medium (P2) · L = Low (P3)
 
-**Last updated:** 2026-08-31 (COACH-16 reschedule agent on `origin/coach-16`)
+**Last updated:** 2026-09-14 (SEC-12 regression suite in `origin/security` as `1f8036f`; **F06 complete 12/12**)
 
 ---
 
@@ -18,8 +18,8 @@ _Update the status column as stories are completed. Do not reorder IDs._
 | F02 AI Planner | 11 | 11 | 0 | ✅ Complete — all stories done |
 | F03 AI Coach | 17 | 16 | 0 | 🔄 |
 | F04 AI Evaluator | 11 | 10 | 0 | 🔄 |
-| F05 Search & Ingestion | 18 | 8 | 0 | 🔄 SEARCH-01..08 done — INGEST-01..10 remaining |
-| F06 Auth & Security | 12 | 1 | 1 | 🔄 |
+| F05 Search & Ingestion | 18 | 18 | 0 | ✅ Complete — SEARCH-01..08 + INGEST-01..10 all done; fully merged across web/AI/API |
+| F06 Auth & Security | 12 | 12 | 0 | ✅ |
 | F07 Study Reliability | 11 | 2 | 0 | 🔄 |
 | F08 Gamification Events | 10 | 0 | 0 | ⬜ |
 | F09 Analytics & Performance | 12 | 0 | 0 | ⬜ |
@@ -302,31 +302,123 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 - [x] **SEARCH-08** Search E2E — *H* · deps: SEARCH-07
 
 ### INGEST
-- [ ] **INGEST-01** Upload validation: MIME + magic bytes — *C* · deps: AI-COM-02
-- [ ] **INGEST-02** Size limits (25 MB, 413) — *C* · deps: INGEST-01
-- [ ] **INGEST-03** Content-type allowlist at gateway/route — *H* · deps: INGEST-01
-- [ ] **INGEST-04** Polyglot/PDF-header checks, sandboxed parsing — *H* · deps: INGEST-01
-- [ ] **INGEST-05** `study.ingest.course` job trigger — *H* · deps: AI-COM-05
-- [ ] **INGEST-06** Background ingestion worker pipeline — *H* · deps: INGEST-05
-- [ ] **INGEST-07** Ingest-status endpoint + course gating — *H* · deps: AI-COM-07
-- [ ] **INGEST-08** Ingestion retry/DLQ policy — *H* · deps: AI-COM-06
-- [ ] **INGEST-09** Hardened LLM extraction of documents — *H* · deps: INGEST-06
-- [ ] **INGEST-10** Ingestion E2E — *H* · deps: INGEST-07
+- [x] **INGEST-01** Upload validation: MIME + magic bytes — *C* · deps: AI-COM-02
+- [x] **INGEST-02** Size limits (25 MB, 413) — *C* · deps: INGEST-01
+  - `MAX_UPLOAD_BYTES`/`MAX_UPLOAD_MB` exported from `shared/uploadValidation.js`
+  - `courses.js` multer limit raised 10MB → 25MB; both course upload routes
+    (`POST /` and `POST /:courseId/files`) wrapped with `withUploadError`
+  - multer `LIMIT_FILE_SIZE` → 413 (never a generic 500); partial files written by
+    diskStorage are cleaned up before responding
+  - 2 route tests (413 + no disk residue) in `course-upload-validation.test.js`; suite 7/7
+- [x] **INGEST-03** Content-type allowlist at gateway/route — *H* · deps: INGEST-01
+  - `requireMultipart` middleware in `shared/middleware.js` (415 for non-multipart POST/PUT)
+  - Gateway guards `POST /api/v1/study/courses` and `POST /:courseId/files` before proxy
+  - Study routes same guard (defense-in-depth); gateway + route 415 tests; all suites green
+- [x] **INGEST-04** Polyglot/PDF-header checks, sandboxed parsing — *H* · deps: INGEST-01
+  - PDFs verified against `%PDF-` header **and** `%%EOF` trailer; content after the
+    last trailer must be whitespace-only (polyglot/spliced payloads → 422)
+  - Encrypted/password-protected PDFs rejected with a clear message: `/Encrypt` in
+    trailer at upload (422) + authoritative `doc.needs_pass` in the AI parser
+  - Text files checked for printable-character ratio (valid UTF-8 sequences count;
+    masked binary payloads → "not readable text", 422)
+  - AI parsing runs inside a forked sandbox: RLIMIT_AS + RLIMIT_CPU applied before
+    parse, strict 45s wall-clock timeout with kill, clear `PdfParse*Error` contract
+  - Node: `shared/uploadValidation.js` (`checkPdfStructure`, `printableTextRatio`);
+    32 shared + 13 route + 106 shared-dir + 115 study tests green
+  - AI: `pdf_loader.py` sandbox supervisor + lazy PyMuPDF; 6 sandbox tests green
+- [x] **INGEST-05** `study.ingest.course` job trigger — *H* · deps: AI-COM-05
+  - Upload/re-ingest no longer block on a 5-minute synchronous AI call: files are
+    staged under `uploads/courses/:courseId` and a `study.ingest.course` job is
+    published via RabbitMQ; both endpoints return `202 { jobId, courseId, status }`
+  - Strict payload validation on both sides: `validateIngestPayload` (courseId ≤64,
+    fileRef ≤256, files ≤10, per-file filename/originalName ≤256, mimetype ≤128,
+    size ≥0, storage-relative path ≤256, extra fields forbidden) + Python
+    `IngestionRequest`/`IngestFileMeta` mirror — limits and names kept in lockstep
+  - Publish failure → course marked `failed`, staged files cleaned, `503` returned;
+    no orphaned/partially-processed uploads
+  - Node: `ingestionJob.js` (`publishCourseIngestionJob`, jobId = envelope messageId);
+    118 study + 111 shared + 13 gateway tests green; parity: 6 Python schema tests green
+- [x] **INGEST-06** Background ingestion worker pipeline — *H* · deps: INGEST-05
+  - `IngestionWorker` (`workers/ingestion_worker.py`) consumes `study.ingest.course`
+    jobs: parse → normalize → enrich → objectives → chunk → embed → dedup → vector store;
+    all stages run off the event loop via `asyncio.to_thread`, ACK only after full completion
+  - Staged files resolved under the ingests-uploads root with path-traversal containment;
+    PDFs run through the INGEST-04 sandbox (encrypted/malformed → `TerminalError`,
+    timeout/limit → retryable); OCR fallback for scanned PDFs, lazy `pytesseract` import
+  - Progress events on `ai.results` under routing key `progress` (NOT `result`, so the
+    Node result inbox's complete/fail correlation is never affected): `AiProgressEnvelope`
+    with stages `parsing/enriching/embedding/indexing`, progress 0..1, detail ≤256
+  - Vectors live in the vector store (`VectorStoreAdapter.add_course`, idempotent on replay);
+    `courseId` used as `course_title` (payload has no title); result payload strips chunk vectors
+  - Node: `PROGRESS_ROUTING_KEY` mirror + fixture `routingKeys {result, progress}` + both parity
+    tests; `docker-compose.prod.yml` mounts `study_uploads:/app/uploads` + `INGEST_UPLOADS_DIR`
+    (ai-service did NOT mount uploads before)
+  - Tests: 68 AI (worker + envelope + parity + base + schema + pdf sandbox) and 112 Node
+    shared tests green
+- [x] **INGEST-07** Ingest-status endpoint + course gating — *H* · deps: AI-COM-07
+  - `GET /api/v1/study/courses/:courseId/ingest-status` (user-scoped, 404 if not owned):
+    `{courseId,status,jobId,stage,progress,detail,error,failedOnly,processedAt,retry,updatedAt}`;
+    `retry.action: 're-upload'` → `POST /:courseId/files` while `failed`
+  - Course model: `jobId` + `correlationId` (set on ingest, reset on re-upload) and live
+    `ingestStage/ingestProgress/ingestDetail/ingestError`; gateway closes with
+    `Course.findOne({ correlationId })` ACKs only `study.ingest.course` events
+  - `services/ingestStatus.js` tracker consumes on `ai.results` via NEW queues
+    `ai.results.progress` (key `progress`) + `ai.results.ingest` (key `result`) — direct
+    exchange copies `result` to both the orchestrator inbox and the ingest queue, so the
+    orchestrator's AiJob complete/fail correlation is untouched; progress envelope
+    validator mirrors Python (`no payload/error` fields)
+  - Completion persists the worker's curated course structure through
+    `sanitizeCourseFromResult` (whitelist: title/subtopics/summary/key_concepts/formulas/
+    examples/definitions/learning_objectives/prerequisites — drops chunk vectors);
+    failure surfaces the sanitized reason
+  - Course gating: `POST /api/v1/study/sessions/setup` (sessionTasks) now requires
+    `course.status === 'completed'` — 400 "still being processed" while ingesting
+    (precedent: `plans.js` gate)
+  - Bootstrap: tracker starts when `RABBITMQ_URL` set (SIGTERM graceful stop);
+    docker-compose(+prod) gives study-service `RABBITMQ_URL` + rabbitmq `depends_on`
+    (closes the INGEST-05 publishing-without-broker gap)
+  - Tests: 135 study + 131 shared + 13 gateway Node green (orchestrator 38/44 — 6
+    pre-existing `coach.test.js` axios-3rd-arg fixture failures, files unchanged vs base);
+    AI 68 green incl. `test_topology_parity` asserting the two new queues
+- [x] **INGEST-08** Ingestion retry/DLQ policy — *H* · deps: AI-COM-06
+  - Retry/DLQ machinery already ships in `BaseAIWorker` (AI-COM-06): per-type delayed
+    backoff queues, `x-retry-count`, DLX → `ai.dlq.study.ingest.course`. This story pins
+    the four ACs at the ingestion boundary (tests only — no prod changes needed)
+  - OCR/LLM failures retryable: `classify_failure` maps OCR/embedding timeouts,
+    rate-limit/5xx → retryable; an OCR failure at attempt 0 books the first backoff stage
+    (1000ms) and is never DLQ'd early; only after MAX_RETRIES (3) → failed result event +
+    DLQ. LLM enrichment failure (parse → enrich raises) behaves identically
+  - Schema/file validation → DLQ immediately: invalid `IngestionRequest` payload and
+    non-UTF-8 file are terminal at attempt 0 (no retry scheduled, nack no-requeue, failed
+    result emitted) — retrying can't fix bad input
+  - Replay tool for DLQ messages: existing `shared/ai-messaging/dlq-replay.js` now pinned
+    for the ingest type (`--type study.ingest.course`) — fresh messageId (fresh worker
+    claim, so the job actually re-runs), correlationId preserved (Course status keeps
+    correlating), retry headers stripped (full retry budget again)
+  - No duplicate embedding on replay: `VectorStoreAdapter.add_course` upserts Mongo by
+    `course_id` with `$set` (replace, never append) and rebuilds the per-course FAISS
+    index, so a replayed job re-indexes the same course without duplicating vectors
+  - Tests: AI 76 green (8 new `tests/test_ingestion_retry.py`: lifecycle + classification
+    + replay-budget + adapter idempotency); Node shared 132 green (ingest replay coverage
+    in `dlq-replay.test.js`)
+- [x] **INGEST-09** Hardened LLM extraction of documents — *H* · deps: INGEST-06
+- [x] **INGEST-10** Ingestion E2E — *H* · deps: INGEST-07
+- [x] **F05 fully merged** — web `695e85f` · ai `dc8965f` · api `86cfd0b` · docs `3dfb81c`; 0 branches ahead of `main` in every repo; AI history rewritten to purge stray conflict markers
 
 ## F06 — Authentication & Security (Sprint 2)
 
 - [x] **SEC-01** OTP via `crypto.randomInt` (`auth.js:241`) — *C*
-- [ ] **SEC-02** OTP TTL/attempts/resend audit — *C* · deps: SEC-01
-- [~] **SEC-03** httpOnly refresh cookie (backend already sets cookies; verify header flow fully removed) — *C*
-- [ ] **SEC-04** No refresh token in JS-accessible state (frontend verify) — *C* · deps: SEC-03
-- [ ] **SEC-05** Centralized `requireInternal` middleware replacing 6+ copies — *H*
-- [ ] **SEC-06** Fail-fast env validation at boot (all services) — *H* · deps: SEC-05
-- [ ] **SEC-07** Protect `/api/v1/monitoring/metrics` — *H*
-- [ ] **SEC-08** Error-leak sanitization (Python `str(e)`, proxyBuilder, base64 log) — *H*
-- [ ] **SEC-09** ReDoS: escape admin `$regex` (`admin.js:42–44`) — *H*
-- [ ] **SEC-10** Mass-assignment protection (`stripUnknown`, field allowlists) — *H*
-- [ ] **SEC-11** Upload security Node-side (async streaming, filename sanitize) — *H* · deps: SEC-10
-- [ ] **SEC-12** Security regression suite (authz/authn/upload/OTP) — *H* · deps: SEC-01..11
+- [x] **SEC-02** OTP TTL/attempts/resend audit — *C* · deps: SEC-01
+- [x] **SEC-03** httpOnly refresh cookie (backend already sets cookies; verify header flow fully removed) — *C*
+- [x] **SEC-04** No refresh token in JS-accessible state (frontend verify) — *C* · deps: SEC-03
+- [x] **SEC-05** Centralized `requireInternal` middleware replacing 6+ copies — *H*
+- [x] **SEC-06** Fail-fast env validation at boot (all services) — *H* · deps: SEC-05
+- [x] **SEC-07** Protect `/api/v1/monitoring/metrics` — *H*
+- [x] **SEC-08** Error-leak sanitization (Python `str(e)`, proxyBuilder, base64 log) — *H*
+- [x] **SEC-09** ReDoS: escape admin `$regex` (`admin.js:42–44`) — *H*
+- [x] **SEC-10** Mass-assignment protection (`stripUnknown`, field allowlists) — *H*
+- [x] **SEC-11** Upload security Node-side (async streaming, filename sanitize) — *H* · deps: SEC-10
+- [x] **SEC-12** Security regression suite (authz/authn/upload/OTP) — *H* · deps: SEC-01..11
 
 ## F07 — Study & Session Reliability (Sprint 3)
 
@@ -396,7 +488,7 @@ Implement feature by feature, only after the nudge path (COACH-01–12) is live.
 
 ## F11 — Infrastructure & Deployment (Sprint 4)
 
-- [ ] **INFRA-01** npm audit blocking (`--audit-level=high`) — *C*
+- [ ] **INFRA-01** pnpm audit blocking (`--audit-level=high`) — *C*
 - [ ] **INFRA-02** Trivy blocking (`exit-code: 1`) — *C*
 - [ ] **INFRA-03** Secret scanning blocking — *C*
 - [ ] **INFRA-04** Non-root containers — *H*

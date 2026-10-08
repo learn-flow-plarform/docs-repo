@@ -3144,7 +3144,7 @@ As a QA Engineer, I want duplicate class methods / module attributes to fail lin
 #### INFRA-01 — Blocking npm Audit
 
 **User Story:**
-As a DevOps engineer, I want `npm audit` to fail the build on critical/high vulnerabilities so that vulnerable dependencies never ship.
+As a DevOps engineer, I want `pnpm audit` to fail the build on critical/high vulnerabilities so that vulnerable dependencies never ship.
 
 **Domain:** Infrastructure
 **Type:** Infra
@@ -3156,7 +3156,7 @@ As a DevOps engineer, I want `npm audit` to fail the build on critical/high vuln
 **Dependencies:** None
 
 **Acceptance Criteria:**
-- Remove `continue-on-error: true` from npm audit in all CI workflows (audit §9.1)
+- Remove `continue-on-error: true` from pnpm audit in all CI workflows (audit §9.1)
 - `--audit-level=high` enforced
 - Known false positives documented with `--json` evidence
 
